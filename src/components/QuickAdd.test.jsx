@@ -18,7 +18,9 @@ describe('QuickAdd', () => {
         fireEvent.click(typeBtn);
 
         expect(screen.getByTitle('Current type: EXERCISE. Click to toggle.')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('min')).toBeInTheDocument();
+        expect(screen.getByLabelText('Minutes')).toBeInTheDocument();
+        // Check default value
+        expect(screen.getByLabelText('Minutes')).toHaveValue(30);
     });
 
     it('submits valid data', () => {
@@ -26,7 +28,7 @@ describe('QuickAdd', () => {
         render(<QuickAdd onAdd={mockAdd} />);
 
         const nameInput = screen.getByPlaceholderText('Quick add item...');
-        const calInput = screen.getByPlaceholderText('0');
+        const calInput = screen.getByLabelText('Calories');
         const addBtn = screen.getByText('check').closest('button');
 
         fireEvent.change(nameInput, { target: { value: 'Apple' } });
@@ -52,8 +54,8 @@ describe('QuickAdd', () => {
         fireEvent.click(screen.getByTitle('Current type: FOOD. Click to toggle.'));
 
         const nameInput = screen.getByPlaceholderText('Quick add item...');
-        const calInput = screen.getByPlaceholderText('0');
-        const minInput = screen.getByPlaceholderText('min');
+        const calInput = screen.getByLabelText('Calories');
+        const minInput = screen.getByLabelText('Minutes');
         const addBtn = screen.getByText('check').closest('button');
 
         fireEvent.change(nameInput, { target: { value: 'Run' } });
@@ -77,8 +79,8 @@ describe('QuickAdd', () => {
         // Verify default unlinked state
         expect(screen.getByTitle('Link (edit proportionally)')).toBeInTheDocument();
 
-        const minInput = screen.getByPlaceholderText('min');
-        const calInput = screen.getByPlaceholderText('0');
+        const minInput = screen.getByLabelText('Minutes');
+        const calInput = screen.getByLabelText('Calories');
 
         // Set initial values
         fireEvent.change(minInput, { target: { value: '30' } });
@@ -97,8 +99,8 @@ describe('QuickAdd', () => {
         render(<QuickAdd onAdd={vi.fn()} />);
         fireEvent.click(screen.getByTitle('Current type: FOOD. Click to toggle.')); // Switch to EXERCISE
 
-        const minInput = screen.getByPlaceholderText('min');
-        const calInput = screen.getByPlaceholderText('0');
+        const minInput = screen.getByLabelText('Minutes');
+        const calInput = screen.getByLabelText('Calories');
 
         // Set initial values while unlinked to establish ratio
         fireEvent.change(minInput, { target: { value: '30' } });
@@ -116,5 +118,34 @@ describe('QuickAdd', () => {
         // Change calories -> minutes should update
         fireEvent.change(calInput, { target: { value: '150' } });
         expect(minInput).toHaveValue(15);
+    });
+
+    it('disables save button when invalid', () => {
+        render(<QuickAdd onAdd={vi.fn()} />);
+        const addBtn = screen.getByText('check').closest('button');
+
+        expect(addBtn).toBeDisabled();
+
+        const nameInput = screen.getByPlaceholderText('Quick add item...');
+        fireEvent.change(nameInput, { target: { value: 'Apple' } });
+        expect(addBtn).toBeDisabled(); // still disabled, no calories
+
+        const calInput = screen.getByLabelText('Calories');
+        fireEvent.change(calInput, { target: { value: '100' } });
+        expect(addBtn).not.toBeDisabled();
+    });
+
+    it('resets inputs on cancel', () => {
+        render(<QuickAdd onAdd={vi.fn()} />);
+
+        const nameInput = screen.getByPlaceholderText('Quick add item...');
+        fireEvent.change(nameInput, { target: { value: 'Apple' } });
+
+        const cancelBtn = screen.getByTitle('Cancel');
+        fireEvent.click(cancelBtn);
+
+        expect(nameInput.value).toBe('');
+        // Cancel button should disappear when empty
+        expect(screen.queryByTitle('Cancel')).not.toBeInTheDocument();
     });
 });

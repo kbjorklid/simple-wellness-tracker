@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import LibraryItemRow from './LibraryItemRow';
 
 export default function LibraryModal({ isOpen, onClose, onAdd }) {
+    const [isCreating, setIsCreating] = useState(false);
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState('ALL'); // ALL, FOOD, EXERCISE
     const [selection, setSelection] = useState({}); // { [id]: { selected: boolean, count: number, minutes: number } }
@@ -13,6 +15,7 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
             setSearch('');
             setFilterType('ALL');
             setSelection({});
+            setIsCreating(false);
         }
     }, [isOpen]);
 
@@ -22,7 +25,15 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
 
             // Apply sorting/filtering if needed, but for search/type we might need to filter in memory 
             // or use compound index. Given library size is likely small (<1000), in-memory filter is fine.
-            return collection.toArray();
+            return collection.toArray().then(items => {
+                return items.sort((a, b) => {
+                    // Sort by lastUsed (descending), then by name (ascending)
+                    const dateA = a.lastUsed || 0;
+                    const dateB = b.lastUsed || 0;
+                    if (dateB !== dateA) return dateB - dateA;
+                    return a.name.localeCompare(b.name);
+                });
+            });
         },
         []
     ) || [];
@@ -54,6 +65,49 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                 [field]: value
             }
         }));
+    };
+
+    const handleUpdateItem = async (id, updates) => {
+        try {
+            await db.library.update(id, updates);
+        } catch (error) {
+            console.error("Failed to update library item:", error);
+        }
+    };
+
+
+
+    const handleCreateItem = async (newItem) => {
+        try {
+            if (!newItem.name || !newItem.name.trim()) return;
+
+            await db.library.add({
+                name: newItem.name,
+                type: newItem.type || 'FOOD',
+                calories: parseInt(newItem.calories) || 0,
+                minutes: parseInt(newItem.minutes) || 30,
+                description: newItem.description || '',
+                norm_name: newItem.name.trim().toLowerCase(),
+                lastUsed: Date.now()
+            });
+            setIsCreating(false);
+        } catch (error) {
+            console.error("Failed to create library item:", error);
+        }
+    };
+
+    const handleDeleteItem = async (id) => {
+        try {
+            await db.library.delete(id);
+            // Remove from selection if it was selected
+            setSelection(prev => {
+                const next = { ...prev };
+                delete next[id];
+                return next;
+            });
+        } catch (error) {
+            console.error("Failed to delete library item:", error);
+        }
     };
 
     const handleAddSelected = () => {
@@ -102,6 +156,12 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
             };
         });
 
+        const now = Date.now();
+        // Update lastUsed for selected items
+        Promise.all(selectedIds.map(id =>
+            db.library.update(id, { lastUsed: now })
+        )).catch(err => console.error("Failed to update lastUsed:", err));
+
         onAdd(selectedData);
         onClose();
     };
@@ -117,13 +177,21 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                 {/* Header */}
                 <div className="flex flex-col gap-4 border-b border-border-dark px-6 py-5 bg-[#232010] z-10 shrink-0">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Add from Library</h2>
-                        <button
-                            onClick={onClose}
-                            className="text-text-secondary hover:text-white transition-colors p-1 rounded-md hover:bg-white/5"
-                        >
-                            <span className="material-symbols-outlined text-[24px]">close</span>
-                        </button>
+                        <h2 className="text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Library</h2>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsCreating(true)}
+                                className={`text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors ${isCreating ? 'opacity-50 pointer-events-none' : ''}`}
+                            >
+                                + New Item
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="text-text-secondary hover:text-white transition-colors p-1 rounded-md hover:bg-white/5"
+                            >
+                                <span className="material-symbols-outlined text-[24px]">close</span>
+                            </button>
+                        </div>
                     </div>
                     <div className="w-full">
                         <div className="flex w-full items-center rounded-lg h-12 bg-border-dark/50 ring-1 ring-transparent focus-within:ring-primary focus-within:bg-border-dark transition-all">
@@ -160,7 +228,15 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                 {/* List */}
                 <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
                     <div className="flex flex-col gap-2">
-                        {filteredItems.length === 0 ? (
+                        {isCreating && (
+                            <LibraryItemRow
+                                item={{ name: '', type: 'FOOD', calories: '', description: '', minutes: 30 }}
+                                initialEditing={true}
+                                onCreate={handleCreateItem}
+                                onCancel={() => setIsCreating(false)}
+                            />
+                        )}
+                        {filteredItems.length === 0 && !isCreating ? (
                             <div className="text-center text-text-secondary py-8">
                                 No items found in library.
                             </div>
@@ -171,72 +247,17 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                                 const currentMinutes = selection[item.id]?.minutes || item.minutes || 30;
 
                                 return (
-                                    <div key={item.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-lg bg-[#2a2715] p-4 transition-colors hover:bg-[#332f1a] border border-transparent hover:border-border-dark">
-                                        <div className="flex flex-1 items-center gap-4 w-full">
-                                            <div className="flex size-6 shrink-0 items-center justify-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={(e) => handleSelect(item.id, e.target.checked)}
-                                                    className="h-5 w-5 rounded border-[#685f31] border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 focus:outline-none cursor-pointer transition-colors"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col justify-center grow min-w-0">
-                                                <p className="text-white text-base font-medium leading-normal truncate">{item.name}</p>
-                                                <div className="text-sm font-normal leading-normal flex items-center gap-2">
-                                                    <span className={item.type === 'EXERCISE' ? 'text-[#8bc34a]' : 'text-primary'}>
-                                                        {item.calories} kcal
-                                                        {item.type === 'EXERCISE' && ` / ${item.minutes || 30}m`}
-                                                    </span>
-                                                    {item.description && <span className="text-text-secondary truncate max-w-[200px]">- {item.description}</span>}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 shrink-0 ml-10 sm:ml-0">
-                                            {item.type === 'FOOD' ? (
-                                                <>
-                                                    <span className="text-xs text-text-secondary uppercase font-semibold tracking-wide hidden sm:block">Qty</span>
-                                                    <div className="flex items-center bg-border-dark rounded-full p-1 shadow-inner">
-                                                        <button
-                                                            onClick={() => handleAdjustment(item.id, 'count', Math.max(1, currentCount - 1))}
-                                                            className="text-white hover:text-primary transition-colors flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10 cursor-pointer disabled:opacity-50"
-                                                            disabled={currentCount <= 1}
-                                                        >
-                                                            <span className="material-symbols-outlined text-[18px]">remove</span>
-                                                        </button>
-                                                        <input
-                                                            type="number"
-                                                            value={currentCount}
-                                                            onChange={(e) => handleAdjustment(item.id, 'count', Math.max(1, parseInt(e.target.value) || 1))}
-                                                            className="text-white text-base font-medium w-10 p-0 text-center bg-transparent focus:outline-0 focus:ring-0 border-none appearance-none"
-                                                            min="1"
-                                                            step="1"
-                                                        />
-                                                        <button
-                                                            onClick={() => handleAdjustment(item.id, 'count', currentCount + 1)}
-                                                            className="text-white hover:text-primary transition-colors flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10 cursor-pointer"
-                                                        >
-                                                            <span className="material-symbols-outlined text-[18px]">add</span>
-                                                        </button>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="text-xs text-text-secondary uppercase font-semibold tracking-wide hidden sm:block">Time</span>
-                                                    <div className="flex items-center bg-border-dark rounded-lg px-3 py-1.5 shadow-inner ring-1 ring-transparent focus-within:ring-primary/50 transition-all h-[36px]">
-                                                        <input
-                                                            type="number"
-                                                            value={currentMinutes}
-                                                            onChange={(e) => handleAdjustment(item.id, 'minutes', Math.max(1, parseInt(e.target.value) || 1))}
-                                                            className="text-white text-base font-medium w-10 p-0 text-right bg-transparent focus:outline-0 focus:ring-0 border-none appearance-none placeholder-text-secondary/50"
-                                                        />
-                                                        <span className="text-text-secondary text-sm ml-1 font-medium">min</span>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
+                                    <LibraryItemRow
+                                        key={item.id}
+                                        item={item}
+                                        isSelected={isSelected}
+                                        currentCount={currentCount}
+                                        currentMinutes={currentMinutes}
+                                        onSelect={handleSelect}
+                                        onAdjust={handleAdjustment}
+                                        onUpdate={handleUpdateItem}
+                                        onDelete={handleDeleteItem}
+                                    />
                                 );
                             })
                         )}
@@ -274,8 +295,8 @@ function FilterButton({ active, label, onClick }) {
         <button
             onClick={onClick}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${active
-                    ? 'font-bold bg-primary text-[#221f10] shadow-sm hover:bg-primary-hover'
-                    : 'text-text-secondary border border-border-dark hover:border-primary hover:text-white bg-transparent'
+                ? 'font-bold bg-primary text-[#221f10] shadow-sm hover:bg-primary-hover'
+                : 'text-text-secondary border border-border-dark hover:border-primary hover:text-white bg-transparent'
                 }`}
         >
             {label}

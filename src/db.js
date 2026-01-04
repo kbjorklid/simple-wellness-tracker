@@ -9,4 +9,8 @@ db.version(3).stores({
     library: '++id, name, type, calories, minutes, description, norm_name'
 });
 
+db.version(4).stores({
+    library: '++id, name, type, calories, minutes, description, norm_name, lastUsed'
+});
+
 

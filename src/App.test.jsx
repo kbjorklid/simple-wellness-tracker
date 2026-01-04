@@ -36,9 +36,8 @@ describe('App', () => {
         fireEvent.change(nameInput, { target: { value: 'New Food' } });
         fireEvent.change(calInput, { target: { value: '100' } });
 
-        const allFoodButtons = screen.getAllByText('FOOD');
-        const foodButtons = allFoodButtons.filter(el => el.tagName === 'BUTTON');
-        const toggleBtn = foodButtons[foodButtons.length - 1];
+        // Find toggle button
+        const toggleBtn = screen.getByTitle(/Current type:/);
 
         expect(toggleBtn).toBeInTheDocument();
 
@@ -61,13 +60,11 @@ describe('App', () => {
 
         fireEvent.change(nameInput, { target: { value: 'Running' } });
 
-        const allFoodButtons = screen.getAllByText('FOOD');
-        const foodBtns = allFoodButtons.filter(el => el.tagName === 'BUTTON');
-        const toggleBtn = foodBtns[foodBtns.length - 1];
+        const toggleBtn = screen.getByTitle(/Current type:/);
 
         fireEvent.click(toggleBtn);
 
-        expect(toggleBtn).toHaveTextContent('EXERCISE');
+        expect(toggleBtn).toHaveAttribute('title', expect.stringContaining('EXERCISE'));
 
         fireEvent.change(calInput, { target: { value: '300' } });
 
@@ -144,5 +141,27 @@ describe('App', () => {
         // Check DB
         const dayAfter = await db.days.get(today);
         expect(dayAfter.isComplete).toBe(false);
+    });
+    it('saves item to library with lastUsed timestamp', async () => {
+        render(<App />);
+        const item = await screen.findByText('Oatmeal & Berries');
+        const row = item.closest('.group');
+
+        // Find bookmark button
+        const bookmarkBtn = within(row).getByTitle('Save to Library');
+        fireEvent.click(bookmarkBtn);
+
+        // Wait for toast
+        await screen.findByText('Saved to library');
+
+        // Check DB
+        const libraryItems = await db.library.toArray();
+        const savedItem = libraryItems.find(i => i.name === 'Oatmeal & Berries');
+
+        expect(savedItem).toBeDefined();
+        expect(savedItem.lastUsed).toBeDefined();
+        expect(typeof savedItem.lastUsed).toBe('number');
+        // Ensure it's recent (within last minute)
+        expect(Date.now() - savedItem.lastUsed).toBeLessThan(60000);
     });
 });

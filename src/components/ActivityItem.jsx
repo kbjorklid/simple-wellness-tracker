@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import WellnessInput from './WellnessInput';
+import ItemMeasurementInputs from './ItemMeasurementInputs';
 
-export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary }) {
+export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, onSaveToLibrary }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [isLinked, setIsLinked] = useState(false);
     const [draft, setDraft] = useState(item);
+    const descriptionRef = React.useRef(null);
 
     // Sync draft with item when not editing or when item changes externally
     React.useEffect(() => {
@@ -34,7 +36,6 @@ export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary
     const handleEditStart = () => {
         setIsEditing(true);
         setIsExpanded(true);
-        setIsLinked(true);
     };
 
     const handleChange = (field, value) => {
@@ -59,17 +60,23 @@ export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary
 
     // Icon mapping based on type
     const icon = draft.type === 'FOOD' ? 'restaurant' : 'directions_run';
-    const typeColor = draft.type === 'EXERCISE' ? 'text-primary' : 'text-slate-400';
-    const typeBg = draft.type === 'EXERCISE' ? 'bg-primary/5 dark:bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-white/5';
+    const typeColor = draft.type === 'EXERCISE' ? 'text-orange-500' : 'text-emerald-500';
+    const typeBg = draft.type === 'EXERCISE' ? 'bg-orange-500/5 dark:bg-orange-400/5' : 'hover:bg-gray-50 dark:hover:bg-white/5';
     const hasDescription = !!item.description;
 
     const count = item.count || 1;
     const totalCalories = (item.calories || 0) * count;
 
+    const bookmarkIcon = isInLibrary ? 'bookmark' : 'bookmark_add';
+    const bookmarkColor = isInLibrary
+        ? 'text-primary'
+        : 'text-slate-300 hover:text-primary dark:text-gray-600 dark:hover:text-primary';
+    const bookmarkTitle = isInLibrary ? "In Library (Click to Replace)" : "Save to Library";
+
     return (
         <div className={`group ${typeBg} transition-colors border-b border-gray-100 dark:border-border-dark last:border-0`}>
             {/* Adjusted grid to give space for buttons */}
-            <div className="grid grid-cols-[20px_60px_48px_1fr_130px_60px] gap-3 px-3 py-1.5 items-center">
+            <div className="grid grid-cols-[20px_60px_48px_1fr_160px_60px] gap-3 px-3 py-1.5 items-center">
                 {/* Expand Toggle - Only visible if has description */}
                 <div className="flex items-center justify-center">
                     {(hasDescription || isEditing) && (
@@ -117,13 +124,13 @@ export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary
                 {/* Name */}
                 <div className="text-slate-900 dark:text-white font-medium text-sm w-full">
                     {isEditing ? (
-                        <input
+                        <WellnessInput
                             type="text"
                             value={draft.name}
                             onChange={(e) => handleChange('name', e.target.value)}
                             onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 focus:outline-none placeholder-slate-400"
+                            autoFocus={!shouldAutoFocusDescription}
+                            placeholder="Item name"
                         />
                     ) : (
                         <div className="truncate">
@@ -133,69 +140,16 @@ export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary
                 </div>
 
                 {/* Calories Input & Minutes (if exercise) */}
-                <div className={`text-right font-bold text-sm flex flex-col items-end ${draft.type === 'EXERCISE' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
+                <div className={`text-right font-bold text-sm flex flex-col items-end ${draft.type === 'EXERCISE' ? 'text-orange-500' : 'text-slate-900 dark:text-white'}`}>
                     {isEditing ? (
-                        <div className="flex flex-col items-end gap-1">
-                            {draft.type === 'EXERCISE' ? (
-                                <div className="flex items-center gap-1">
-                                    <div className="flex items-center">
-                                        <input
-                                            type="number"
-                                            value={draft.minutes || ''}
-                                            onChange={(e) => {
-                                                const newMinutes = parseInt(e.target.value) || 0;
-                                                let updates = { minutes: newMinutes };
-
-                                                if (isLinked && draft.minutes > 0 && draft.calories > 0) {
-                                                    const ratio = draft.calories / draft.minutes;
-                                                    updates.calories = Math.round(newMinutes * ratio);
-                                                }
-
-                                                setDraft(prev => ({ ...prev, ...updates }));
-                                            }}
-                                            onKeyDown={handleKeyDown}
-                                            className="w-14 text-right bg-transparent border-b border-gray-200 dark:border-gray-700 p-0 text-xs font-medium text-slate-500 dark:text-gray-400 focus:ring-0 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                            placeholder="min"
-                                        />
-                                        <span className="text-[10px] text-slate-400 ml-0.5">m</span>
-                                    </div>
-
-                                    <button
-                                        onClick={() => setIsLinked(!isLinked)}
-                                        className={`size-5 flex items-center justify-center rounded transition-colors ${isLinked ? 'text-primary bg-primary/10' : 'text-slate-300 hover:text-slate-400'}`}
-                                        title={isLinked ? "Unlink (edit separately)" : "Link (edit proportionally)"}
-                                    >
-                                        <span className="material-symbols-outlined text-[14px]">{isLinked ? 'link' : 'link_off'}</span>
-                                    </button>
-
-                                    <input
-                                        type="number"
-                                        value={draft.calories || ''}
-                                        onChange={(e) => {
-                                            const newCalories = parseInt(e.target.value) || 0;
-                                            let updates = { calories: newCalories };
-
-                                            if (isLinked && draft.minutes > 0 && draft.calories > 0) {
-                                                const ratio = draft.minutes / draft.calories;
-                                                updates.minutes = Math.round(newCalories * ratio);
-                                            }
-
-                                            setDraft(prev => ({ ...prev, ...updates }));
-                                        }}
-                                        onKeyDown={handleKeyDown}
-                                        className="w-16 text-right bg-transparent border-none p-0 text-sm focus:ring-0 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                        placeholder="cal"
-                                    />
-                                </div>
-                            ) : (
-                                <input
-                                    type="number"
-                                    value={draft.calories}
-                                    onChange={(e) => handleChange('calories', parseInt(e.target.value) || 0)}
-                                    onKeyDown={handleKeyDown}
-                                    className="w-full text-right bg-transparent border-none p-0 text-sm focus:ring-0 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                            )}
+                        <div className="flex flex-col items-end gap-1 w-full relative">
+                            <ItemMeasurementInputs
+                                type={draft.type}
+                                minutes={draft.minutes}
+                                calories={draft.calories}
+                                onChange={(updates) => setDraft(prev => ({ ...prev, ...updates }))}
+                                onKeyDown={handleKeyDown}
+                            />
                         </div>
                     ) : (
                         <div className="flex flex-col items-end">
@@ -213,10 +167,10 @@ export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary
                         <>
                             <button
                                 onClick={() => onSaveToLibrary(item)}
-                                className="flex items-center justify-center text-slate-300 hover:text-primary dark:text-gray-600 dark:hover:text-primary transition-colors size-7 rounded"
-                                title="Save to Library"
+                                className={`flex items-center justify-center ${bookmarkColor} transition-colors size-7 rounded`}
+                                title={bookmarkTitle}
                             >
-                                <span className="material-symbols-outlined text-[18px]">bookmark_add</span>
+                                <span className="material-symbols-outlined text-[18px]">{bookmarkIcon}</span>
                             </button>
                             <button
                                 onClick={handleEditStart}
@@ -246,6 +200,7 @@ export default function ActivityItem({ item, onDelete, onUpdate, onSaveToLibrary
                             <label className="absolute -top-2 left-2 px-1 bg-white dark:bg-card-dark text-[9px] font-bold text-primary uppercase tracking-wide leading-none z-10">Description</label>
                             {isEditing ? (
                                 <textarea
+                                    ref={descriptionRef}
                                     value={draft.description || ""}
                                     onChange={(e) => handleChange('description', e.target.value)}
                                     className="bg-gray-50 dark:bg-input-bg-dark border border-primary text-slate-600 dark:text-gray-300 font-medium text-xs rounded-md px-3 py-2 w-full shadow-sm focus:outline-none min-h-[60px]"

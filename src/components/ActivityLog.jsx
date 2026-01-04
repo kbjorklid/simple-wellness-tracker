@@ -2,13 +2,19 @@ import React from 'react';
 import ActivityItem from './ActivityItem';
 import QuickAdd from './QuickAdd';
 
-export default function ActivityLog({ items, onAdd, onDelete, onUpdate, onOpenLibrary, onSaveToLibrary }) {
+export default function ActivityLog({ items, libraryItemNames, onAdd, onDelete, onUpdate, onOpenLibrary, onSaveToLibrary }) {
+
+
+    const handleQuickAdd = async (newItem) => {
+        await onAdd(newItem);
+    };
+
     return (
         <div className="rounded-lg bg-white dark:bg-card-dark shadow-sm border border-gray-200 dark:border-border-dark overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-card-dark flex justify-between items-center">
                 <h3 className="text-slate-900 dark:text-white font-bold text-sm">Activity Log</h3>
             </div>
-            <div className="grid grid-cols-[20px_60px_48px_1fr_130px_60px] gap-3 px-3 py-1.5 border-b border-gray-100 dark:border-border-dark bg-white dark:bg-card-dark text-[10px] font-bold uppercase text-slate-400 dark:text-gray-500">
+            <div className="grid grid-cols-[20px_60px_48px_1fr_160px_60px] gap-3 px-3 py-1.5 border-b border-gray-100 dark:border-border-dark bg-white dark:bg-card-dark text-[10px] font-bold uppercase text-slate-400 dark:text-gray-500">
                 <div></div>
                 <div className="text-center">Count</div>
                 <div className="text-center">Type</div>
@@ -21,12 +27,13 @@ export default function ActivityLog({ items, onAdd, onDelete, onUpdate, onOpenLi
                     <ActivityItem
                         key={item.id}
                         item={item}
+                        isInLibrary={libraryItemNames?.has(item.name.trim().toLowerCase())}
                         onDelete={onDelete}
                         onUpdate={onUpdate}
                         onSaveToLibrary={onSaveToLibrary}
                     />
                 ))}
-                <QuickAdd onAdd={onAdd} />
+                <QuickAdd onAdd={handleQuickAdd} />
             </div>
             <div className="p-2 border-t border-gray-100 dark:border-border-dark bg-gray-50 dark:bg-card-dark">
                 <button

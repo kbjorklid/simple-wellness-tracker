@@ -12,12 +12,14 @@ import { format } from 'date-fns';
 import Toggle from './components/Toggle';
 
 import LibraryModal from './components/LibraryModal';
+import ReplaceLibraryItemModal from './components/ReplaceLibraryItemModal';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-  const [toastState, setToastState] = useState(null); // { message, undoId }
+  const [toastState, setToastState] = useState(null); // { message, undoId, action }
+  const [replaceDialogState, setReplaceDialogState] = useState(null); // { existing, new }
 
   // Fetch items for specific date
   const items = useLiveQuery(
@@ -37,6 +39,14 @@ function App() {
     [currentDate]
   );
 
+  // Fetch library items for "in library" check
+  const libraryItems = useLiveQuery(
+    () => db.library.toArray(),
+    []
+  ) || [];
+
+  const libraryItemNames = new Set(libraryItems.map(item => item.norm_name));
+
   const isDayComplete = currentDay?.isComplete || false;
 
   const rmr = userSettings?.rmr || 2000; // Default RMR
@@ -45,7 +55,8 @@ function App() {
 
   const handleAdd = async (newItem) => {
     try {
-      await db.items.add({ ...newItem, date: currentDate });
+      const id = await db.items.add({ ...newItem, date: currentDate });
+      return id;
     } catch (error) {
       console.error("Failed to add item:", error);
     }
@@ -54,7 +65,10 @@ function App() {
   const handleAddFromLibrary = async (newItems) => {
     try {
       await db.items.bulkAdd(newItems.map(item => ({ ...item, date: currentDate })));
-      setToastState({ message: `Added ${newItems.length} item${newItems.length !== 1 ? 's' : ''}` });
+      setToastState({
+        message: `Added ${newItems.length} item${newItems.length !== 1 ? 's' : ''}`,
+        action: undefined
+      });
     } catch (error) {
       console.error("Failed to add from library:", error);
     }
@@ -63,25 +77,60 @@ function App() {
   const handleSaveToLibrary = async (item) => {
     try {
       const normName = item.name.trim().toLowerCase();
-      const exists = await db.library.where('norm_name').equals(normName).first();
+      const existing = await db.library.where('norm_name').equals(normName).first();
 
-      if (exists) {
-        setToastState({ message: 'Item already exists in library' });
-        return;
-      }
-
-      await db.library.add({
+      const newItem = {
         name: item.name.trim(),
         type: item.type,
         calories: parseInt(item.calories) || 0,
-        minutes: parseInt(item.minutes) || 30, // Default or existing
+        minutes: parseInt(item.minutes) || 30,
         description: item.description || '',
-        norm_name: normName
-      });
+        norm_name: normName,
+        lastUsed: Date.now()
+      };
+
+      if (existing) {
+        // Check for differences
+        const hasChanges =
+          existing.name !== newItem.name || // Case sensitivity
+          existing.calories !== newItem.calories ||
+          (existing.type === 'EXERCISE' && existing.minutes !== newItem.minutes) ||
+          existing.description !== newItem.description;
+
+        if (hasChanges) {
+          setToastState({
+            message: 'Item already exists in library',
+            action: {
+              label: 'Replace',
+              onClick: () => setReplaceDialogState({ existing, new: { ...newItem, lastUsed: Date.now() } })
+            }
+          });
+        } else {
+          setToastState({ message: 'Item already exists in library' });
+        }
+        return;
+      }
+
+      await db.library.add(newItem);
       setToastState({ message: 'Saved to library' });
     } catch (error) {
       console.error("Failed to save to library:", error);
       setToastState({ message: 'Failed to save to library' });
+    }
+  };
+
+  const handleConfirmReplace = async () => {
+    if (!replaceDialogState) return;
+
+    try {
+      const { existing, new: newItem } = replaceDialogState;
+      await db.library.update(existing.id, newItem);
+      setToastState({ message: 'Library item updated' });
+    } catch (error) {
+      console.error("Failed to update library item:", error);
+      setToastState({ message: 'Failed to update library item' });
+    } finally {
+      setReplaceDialogState(null);
     }
   };
 
@@ -152,12 +201,24 @@ function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         currentDate={currentDate}
+        onManageLibrary={() => {
+          setIsSettingsOpen(false);
+          setIsLibraryOpen(true);
+        }}
       />
 
       <LibraryModal
         isOpen={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
         onAdd={handleAddFromLibrary}
+      />
+
+      <ReplaceLibraryItemModal
+        isOpen={!!replaceDialogState}
+        existingItem={replaceDialogState?.existing}
+        newItem={replaceDialogState?.new}
+        onClose={() => setReplaceDialogState(null)}
+        onConfirm={handleConfirmReplace}
       />
 
       <main className="flex-1 flex flex-col items-center py-4 px-4 lg:px-8 overflow-y-auto">
@@ -186,9 +247,15 @@ function App() {
                     <span className="material-symbols-outlined text-[10px] leading-none">u_turn_right</span>
                   </button>
                 )}
-                <h1 className="text-base font-bold text-slate-900 dark:text-white leading-none">
-                  {formatDateDisplay(currentDate)}
-                </h1>
+                <DatePicker
+                  date={currentDate}
+                  onSelect={(date) => setCurrentDate(format(date, 'yyyy-MM-dd'))}
+                  align="left"
+                >
+                  <h1 className="text-base font-bold text-slate-900 dark:text-white leading-none hover:opacity-75 transition-opacity cursor-pointer">
+                    {formatDateDisplay(currentDate)}
+                  </h1>
+                </DatePicker>
               </div>
               <button
                 onClick={() => changeDate(1)}
@@ -199,10 +266,6 @@ function App() {
             </div>
             <div>
               <div className="flex flex-col items-end gap-1">
-                <DatePicker
-                  date={currentDate}
-                  onSelect={(date) => setCurrentDate(format(date, 'yyyy-MM-dd'))}
-                />
                 <Toggle
                   checked={isDayComplete}
                   onChange={handleToggleComplete}
@@ -216,6 +279,7 @@ function App() {
           <ProgressBar items={items} goal={goal} rmr={rmr} />
           <ActivityLog
             items={items}
+            libraryItemNames={libraryItemNames}
             onAdd={handleAdd}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
@@ -230,6 +294,7 @@ function App() {
         <Toast
           message={toastState.message}
           onUndo={toastState.undoId ? handleUndo : undefined}
+          action={toastState.action}
           onClose={handleCloseToast}
         />
       )

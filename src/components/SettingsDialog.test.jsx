@@ -61,21 +61,30 @@ describe('SettingsDialog', () => {
 
         const inputs = screen.getAllByRole('spinbutton');
         // weight, rmr, deficit
-        fireEvent.change(inputs[0], { target: { value: '80' } });
-        fireEvent.change(inputs[1], { target: { value: '2000' } });
-        fireEvent.change(inputs[2], { target: { value: '300' } });
+        fireEvent.change(inputs[0], { target: { value: '80' }     it('calls onManageLibrary when button clicked', () => {
+            const onManage = vi.fn();
+            render(<SettingsDialog isOpen = { true} onClose = { mockOnClose } currentDate = "2024-01-01" onManageLibrary = { onManage } />);
+        
+        const manageButton = screen.getByText('Manage Item Library');
+            fireEvent.click(manageButton);
 
-        const saveBtn = screen.getByText('Save Changes');
-        fireEvent.click(saveBtn);
-
-        await waitFor(() => {
-            expect(db.userSettings.add).toHaveBeenCalledWith({
-                date: currentDate,
-                weight: 80,
-                rmr: 2000,
-                deficit: 300
-            });
-            expect(mockOnClose).toHaveBeenCalled();
+            expect(onManage).toHaveBeenCalled();
         });
     });
+    fireEvent.change(inputs[1], { target: { value: '2000' } });
+    fireEvent.change(inputs[2], { target: { value: '300' } });
+
+    const saveBtn = screen.getByText('Save Changes');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+        expect(db.userSettings.add).toHaveBeenCalledWith({
+            date: currentDate,
+            weight: 80,
+            rmr: 2000,
+            deficit: 300
+        });
+        expect(mockOnClose).toHaveBeenCalled();
+    });
+});
 });

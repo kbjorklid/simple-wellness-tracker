@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-export default function Toast({ message, onUndo, onClose, duration = 4000 }) {
+export default function Toast({ message, onUndo, action, onClose, duration = 4000 }) {
     useEffect(() => {
         const timer = setTimeout(() => {
             onClose();
@@ -14,6 +14,14 @@ export default function Toast({ message, onUndo, onClose, duration = 4000 }) {
             <div className="bg-slate-900 dark:bg-slate-800 text-white dark:text-gray-100 px-4 py-3 rounded-lg shadow-lg flex items-center gap-4 min-w-[300px] justify-between border border-slate-700/50">
                 <span className="text-sm font-medium">{message}</span>
                 <div className="flex items-center gap-2">
+                    {action && (
+                        <button
+                            onClick={action.onClick}
+                            className="text-sm font-bold text-primary hover:text-primary-light transition-colors"
+                        >
+                            {action.label}
+                        </button>
+                    )}
                     {onUndo && (
                         <button
                             onClick={onUndo}
