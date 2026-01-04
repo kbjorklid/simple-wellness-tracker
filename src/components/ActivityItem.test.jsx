@@ -67,9 +67,18 @@ describe('ActivityItem', () => {
         const mockOnSaveToLibrary = vi.fn();
         render(<ActivityItem item={mockItem} onDelete={mockOnDelete} onUpdate={mockOnUpdate} onSaveToLibrary={mockOnSaveToLibrary} />);
 
-        const saveBtn = screen.getAllByTitle('Save to Library')[0];
-        fireEvent.click(saveBtn);
+        const saveBtns = screen.getAllByTitle('Save to Library');
+        // We expect at least 2 buttons: one for desktop and one for mobile
+        expect(saveBtns.length).toBeGreaterThanOrEqual(2);
 
+        // Test the first one (likely desktop)
+        fireEvent.click(saveBtns[0]);
+        expect(mockOnSaveToLibrary).toHaveBeenCalledTimes(1);
+        expect(mockOnSaveToLibrary).toHaveBeenCalledWith(mockItem);
+
+        // Test the second one (likely mobile)
+        fireEvent.click(saveBtns[1]);
+        expect(mockOnSaveToLibrary).toHaveBeenCalledTimes(2);
         expect(mockOnSaveToLibrary).toHaveBeenCalledWith(mockItem);
     });
 

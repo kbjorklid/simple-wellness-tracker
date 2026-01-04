@@ -87,7 +87,7 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
         <div className={`group ${typeBg} transition-colors border-b border-gray-100 dark:border-border-dark last:border-0`}>
 
 
-            <div className="flex flex-col md:grid md:grid-cols-[20px_60px_48px_1fr_160px_60px] gap-2 md:gap-3 px-3 py-2 md:py-1.5 items-start md:items-center">
+            <div className="flex flex-col md:grid md:grid-cols-[20px_60px_48px_1fr_160px_60px] gap-2 md:gap-3 px-3 py-3 md:py-1.5 items-start md:items-center">
 
                 {/* 1. Expand Toggle (Desktop: Col 1) */}
                 <div className="hidden md:flex items-center justify-center">
@@ -229,9 +229,18 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                         {/* Mobile Actions */}
                         <div className="flex items-center gap-0">
                             {!isEditing && (
-                                <button onClick={handleEditStart} className="p-2 text-slate-400 active:text-blue-500" title="Edit">
-                                    <span className="material-symbols-outlined text-[20px]">edit</span>
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => onSaveToLibrary(item)}
+                                        className={`p-2 active:opacity-80 ${isInLibrary ? 'text-primary' : 'text-slate-400 active:text-primary'}`}
+                                        title={bookmarkTitle}
+                                    >
+                                        <span className="material-symbols-outlined text-[20px]">{bookmarkIcon}</span>
+                                    </button>
+                                    <button onClick={handleEditStart} className="p-2 text-slate-400 active:text-blue-500" title="Edit">
+                                        <span className="material-symbols-outlined text-[20px]">edit</span>
+                                    </button>
+                                </>
                             )}
                             <button onClick={() => onDelete(item.id)} className="p-2 text-slate-400 active:text-red-500" title="Delete">
                                 <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -284,18 +293,18 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                 <div className="px-3 pb-3 pt-0 md:pt-2 flex gap-3">
                     <div className="hidden md:block w-[148px] shrink-0"></div>
                     <div className="relative w-full flex flex-col gap-2 col-span-4">
-                        <div className="relative w-full">
-                            <label className="absolute -top-2 left-2 px-1 bg-white dark:bg-card-dark text-[9px] font-bold text-primary uppercase tracking-wide leading-none z-10">Description</label>
+                        <div className="relative w-full mt-2 md:mt-0">
+                            <label className="absolute -top-2 left-2 px-1 bg-white dark:bg-card-dark text-[10px] font-bold text-primary uppercase tracking-wide leading-none z-10 rounded">Description</label>
                             {isEditing ? (
                                 <textarea
                                     ref={descriptionRef}
                                     value={draft.description || ""}
                                     onChange={(e) => handleChange('description', e.target.value)}
-                                    className="bg-gray-50 dark:bg-input-bg-dark border border-primary text-slate-600 dark:text-gray-300 font-medium text-xs rounded-md px-3 py-2 w-full shadow-sm focus:outline-none min-h-[60px]"
+                                    className="bg-gray-50 dark:bg-input-bg-dark border border-primary text-slate-600 dark:text-gray-300 font-medium text-sm rounded-lg px-3 py-3 w-full shadow-sm focus:outline-none min-h-[80px]"
                                     placeholder="Add a description..."
                                 />
                             ) : (
-                                <div className="bg-gray-50 dark:bg-input-bg-dark border border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-300 font-medium text-xs rounded-md px-3 py-2 w-full shadow-sm min-h-[40px]">
+                                <div className="bg-gray-50 dark:bg-input-bg-dark border border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-300 font-medium text-sm rounded-lg px-3 py-3 w-full shadow-sm min-h-[40px] whitespace-pre-wrap">
                                     {item.description}
                                 </div>
                             )}
@@ -305,13 +314,13 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                             <div className="flex justify-end gap-3 mt-2">
                                 <button
                                     onClick={handleCancel}
-                                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors bg-gray-100 dark:bg-white/5 rounded"
+                                    className="px-4 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors bg-gray-100 dark:bg-white/5 rounded-lg"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="px-6 py-2 text-xs font-bold text-white bg-primary rounded hover:bg-primary-dark transition-colors shadow-sm"
+                                    className="px-6 py-2.5 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
                                 >
                                     Save
                                 </button>
@@ -322,9 +331,9 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                             <div className="md:hidden flex justify-end mt-2">
                                 <button
                                     onClick={() => onSaveToLibrary(item)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold border transition-colors ${isInLibrary ? 'border-primary text-primary bg-primary/5' : 'border-gray-200 text-slate-500'}`}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${isInLibrary ? 'border-primary text-primary bg-primary/5' : 'border-gray-200 text-slate-500'}`}
                                 >
-                                    <span className="material-symbols-outlined text-[16px]">{bookmarkIcon}</span>
+                                    <span className="material-symbols-outlined text-[18px]">{bookmarkIcon}</span>
                                     {isInLibrary ? 'Saved to Library' : 'Save to Library'}
                                 </button>
                             </div>

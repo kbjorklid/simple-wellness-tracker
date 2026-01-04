@@ -247,19 +247,19 @@ function App() {
         onConfirm={handleConfirmReplace}
       />
 
-      <main className="flex-1 flex flex-col items-center py-4 px-4 lg:px-8 overflow-y-auto">
+      <main className="flex-1 flex flex-col items-center py-4 px-4 lg:px-8">
         <div className="w-full max-w-3xl flex flex-col gap-3">
 
           {/* Date Nav */}
-          <div className="flex justify-between items-center gap-2 p-2 rounded-lg bg-white dark:bg-card-dark shadow-sm border border-gray-200 dark:border-border-dark">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-2 p-3 sm:p-2 rounded-lg bg-white dark:bg-card-dark shadow-sm border border-gray-200 dark:border-border-dark">
+            <div className="flex items-center justify-between sm:justify-start gap-2">
               <button
                 onClick={() => changeDate(-1)}
-                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-input-bg-dark transition-colors text-slate-500 dark:text-gray-400"
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-input-bg-dark transition-colors text-slate-500 dark:text-gray-400"
               >
                 <span className="material-symbols-outlined text-[20px]">chevron_left</span>
               </button>
-              <div className="flex flex-col items-start px-1">
+              <div className="flex flex-col items-center sm:items-start px-1">
                 {isToday ? (
                   <span className="text-[10px] font-bold text-primary uppercase tracking-wider leading-none mb-0.5">
                     Today
@@ -278,31 +278,31 @@ function App() {
                   onSelect={(date) => setCurrentDate(format(date, 'yyyy-MM-dd'))}
                   align="left"
                 >
-                  <h1 className="text-base font-bold text-slate-900 dark:text-white leading-none hover:opacity-75 transition-opacity cursor-pointer">
+                  <h1 className="text-xl sm:text-base font-bold text-slate-900 dark:text-white leading-none hover:opacity-75 transition-opacity cursor-pointer">
                     {formatDateDisplay(currentDate)}
                   </h1>
                 </DatePicker>
               </div>
               <button
                 onClick={() => changeDate(1)}
-                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-input-bg-dark transition-colors text-slate-500 dark:text-gray-400"
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-input-bg-dark transition-colors text-slate-500 dark:text-gray-400"
               >
                 <span className="material-symbols-outlined text-[20px]">chevron_right</span>
               </button>
             </div>
-            <div>
-              <div className="flex items-center gap-4">
-                <WeightDisplay
-                  weight={userSettings?.weight}
-                  onSave={handleWeightUpdate}
+
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-border-dark">
+              <WeightDisplay
+                weight={userSettings?.weight}
+                onSave={handleWeightUpdate}
+              />
+              <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
+              <div className="flex flex-col items-end gap-1">
+                <Toggle
+                  checked={isDayComplete}
+                  onChange={handleToggleComplete}
+                  label="Day Complete"
                 />
-                <div className="flex flex-col items-end gap-1">
-                  <Toggle
-                    checked={isDayComplete}
-                    onChange={handleToggleComplete}
-                    label="Day Complete"
-                  />
-                </div>
               </div>
             </div>
           </div>
