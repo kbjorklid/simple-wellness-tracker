@@ -31,7 +31,7 @@ describe('App', () => {
         await screen.findByText('Oatmeal & Berries');
 
         const nameInput = screen.getByPlaceholderText('Quick add item...');
-        const calInput = screen.getByPlaceholderText('0');
+        const calInput = screen.getByLabelText('Calories');
 
         fireEvent.change(nameInput, { target: { value: 'New Food' } });
         fireEvent.change(calInput, { target: { value: '100' } });
@@ -42,9 +42,11 @@ describe('App', () => {
         expect(toggleBtn).toBeInTheDocument();
 
         // Add
-        const checkBtns = screen.getAllByText('check');
-        const checkBtn = checkBtns[checkBtns.length - 1].closest('button');
+        const quickAddContainer = nameInput.closest('.grid');
+        const checkIcon = within(quickAddContainer).getByText('check');
+        const checkBtn = checkIcon.closest('button');
 
+        expect(checkBtn).not.toBeDisabled();
         fireEvent.click(checkBtn);
 
         expect(await screen.findByText('New Food')).toBeInTheDocument();
@@ -56,20 +58,23 @@ describe('App', () => {
         await screen.findByText('Oatmeal & Berries');
 
         const nameInput = screen.getByPlaceholderText('Quick add item...');
-        const calInput = screen.getByPlaceholderText('0');
 
         fireEvent.change(nameInput, { target: { value: 'Running' } });
 
         const toggleBtn = screen.getByTitle(/Current type:/);
-
         fireEvent.click(toggleBtn);
 
         expect(toggleBtn).toHaveAttribute('title', expect.stringContaining('EXERCISE'));
 
-        fireEvent.change(calInput, { target: { value: '300' } });
+        // Re-query because inputs might have been replaced
+        const caloriesInput = screen.getByLabelText('Calories');
+        fireEvent.change(caloriesInput, { target: { value: '300' } });
 
-        const checkBtns = screen.getAllByText('check');
-        const checkBtn = checkBtns[checkBtns.length - 1].closest('button');
+        const quickAddContainer = nameInput.closest('.grid');
+        const checkIcon = within(quickAddContainer).getByText('check');
+        const checkBtn = checkIcon.closest('button');
+
+        expect(checkBtn).not.toBeDisabled();
         fireEvent.click(checkBtn);
 
         expect(await screen.findByText('Running')).toBeInTheDocument();
@@ -163,5 +168,32 @@ describe('App', () => {
         expect(typeof savedItem.lastUsed).toBe('number');
         // Ensure it's recent (within last minute)
         expect(Date.now() - savedItem.lastUsed).toBeLessThan(60000);
+    });
+
+    it('updates weight settings for the day', async () => {
+        render(<App />);
+        await screen.findByText('2000'); // Validates load
+
+        // Find weight display (starts as -- if no settings, or uses previous if any. DB cleared in beforeEach, so -- or userSettings default?)
+        // In beforeEach, we only add items. userSettings is empty.
+        // So it should show '--'.
+
+        // Wait for it to be visible
+        const weightBtn = await screen.findByTitle('Click to edit weight');
+        expect(weightBtn).toBeInTheDocument();
+
+        fireEvent.click(weightBtn);
+
+        const input = screen.getByPlaceholderText('Weight');
+        fireEvent.change(input, { target: { value: '70' } });
+        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+        // Should show 70
+        expect(await screen.findByText('70')).toBeInTheDocument();
+
+        // Check DB
+        const setting = await db.userSettings.where({ date: today }).first();
+        expect(setting).toBeDefined();
+        expect(setting.weight).toBe(70);
     });
 });

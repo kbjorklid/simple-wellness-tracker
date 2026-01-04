@@ -67,17 +67,45 @@ export default function Stats({ items = [], goal = 2000, rmr = 2000 }) {
                 <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-gray-500">Burned</p>
                 <p className="text-primary tracking-tight text-lg font-bold leading-none">{totalBurned}</p>
             </div>
-            {caloriesLeft < 0 ? (
-                <div className="flex flex-col justify-center gap-0.5 rounded-lg px-3 py-2 bg-red-500/10 dark:bg-red-500/10 border border-red-500/20 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase text-red-600 dark:text-red-400">Over</p>
-                    <p className="text-red-700 dark:text-red-300 tracking-tight text-lg font-bold leading-none">{Math.abs(caloriesLeft)}</p>
-                </div>
-            ) : (
-                <div className="flex flex-col justify-center gap-0.5 rounded-lg px-3 py-2 bg-primary/10 border border-primary/20 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase text-primary-dark dark:text-primary">Left</p>
-                    <p className="text-slate-900 dark:text-white tracking-tight text-lg font-bold leading-none">{caloriesLeft}</p>
-                </div>
-            )}
+            {/* Remaining Calories / Over Logic
+                State 1: Left (Green) -> Net < Goal.
+                State 2: Over Goal (Yellow) -> Goal < Net < RMR.
+                State 3: Over RMR (Red) -> Net > RMR.
+            */}
+            {(() => {
+                const isOverGoal = caloriesLeft < 0;
+                const isOverRMR = netCalories > rmr;
+
+                // Muted Dark Green: Emerald-700 text, Emerald-500/10 bg? Or Slate?
+                // User asked for "muted dark green similar to the current yellow".
+                // Current yellow is amber-500 for the bar, but the text was likely slate or primary.
+                // Let's use Emerald.
+
+                if (!isOverGoal) {
+                    return (
+                        <div className="flex flex-col justify-center gap-0.5 rounded-lg px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
+                            <p className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400">Left</p>
+                            <p className="text-emerald-800 dark:text-emerald-200 tracking-tight text-lg font-bold leading-none">{caloriesLeft}</p>
+                        </div>
+                    );
+                } else if (!isOverRMR) {
+                    // Over Goal but Under RMR -> Yellow
+                    return (
+                        <div className="flex flex-col justify-center gap-0.5 rounded-lg px-3 py-2 bg-amber-500/10 border border-amber-500/20 shadow-sm">
+                            <p className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">Over</p>
+                            <p className="text-amber-800 dark:text-amber-200 tracking-tight text-lg font-bold leading-none">{Math.abs(caloriesLeft)}</p>
+                        </div>
+                    );
+                } else {
+                    // Over RMR -> Red
+                    return (
+                        <div className="flex flex-col justify-center gap-0.5 rounded-lg px-3 py-2 bg-red-500/10 dark:bg-red-500/10 border border-red-500/20 shadow-sm">
+                            <p className="text-[10px] font-bold uppercase text-red-600 dark:text-red-400">Over</p>
+                            <p className="text-red-700 dark:text-red-300 tracking-tight text-lg font-bold leading-none">{Math.abs(caloriesLeft)}</p>
+                        </div>
+                    );
+                }
+            })()}
         </div>
     );
 }

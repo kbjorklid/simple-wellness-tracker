@@ -25,6 +25,7 @@ describe('ProgressBar', () => {
         expect(screen.getByText(/1,000/)).toBeInTheDocument();
         expect(screen.getByText('kcal')).toBeInTheDocument();
         expect(screen.getByText('GOAL')).toBeInTheDocument();
+        expect(screen.getByText('RMR')).toBeInTheDocument();
 
         const widths = getSegmentWidths(container);
         expect(widths[0]).toBe('40%'); // Green

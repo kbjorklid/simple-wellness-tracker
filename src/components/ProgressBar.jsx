@@ -45,6 +45,9 @@ export default function ProgressBar({ items = [], goal = 2000, rmr = 2000 }) {
     // The goal is always at 'goal' value.
     const goalMarkerPct = (goal / safeScale) * 100;
 
+    // RMR Marker Position
+    const rmrMarkerPct = (rmr / safeScale) * 100;
+
     return (
         <div className="rounded-lg bg-white dark:bg-card-dark px-3 py-2 shadow-sm border border-gray-200 dark:border-border-dark flex items-center gap-3 h-10">
             <div className="flex-shrink-0 text-slate-900 dark:text-white text-xs font-bold w-16">
@@ -70,17 +73,11 @@ export default function ProgressBar({ items = [], goal = 2000, rmr = 2000 }) {
                 </div>
 
                 {/* Goal Marker */}
-                {/* Only show if goal is within scale (it should always be since scale >= rmr >= goal) */}
                 <div
                     className="absolute top-0 bottom-0 w-0.5 bg-slate-900 dark:bg-white z-10 pointer-events-none"
                     style={{ left: `${goalMarkerPct}%` }}
                 ></div>
 
-                {/* Goal Label - conditionally positioned to not clip? 
-                    For now, center it on the marker line, slightly above or below. 
-                    Let's place it above the bar for clarity, or maybe tooltippy? 
-                    User asked: "mark the position of the goal and show the goal label there" 
-                */}
                 <div
                     className="absolute -top-3 text-[9px] font-bold text-slate-500 dark:text-gray-400 transform -translate-x-1/2"
                     style={{ left: `${goalMarkerPct}%` }}
@@ -88,11 +85,18 @@ export default function ProgressBar({ items = [], goal = 2000, rmr = 2000 }) {
                     GOAL
                 </div>
 
-                {/* RMR Marker? User didn't explicitly ask for RMR label, just color change after RMR. 
-                     But since the scale changes, maybe useful? 
-                     User said: "The progress bar should be full when the calorie amount reaches the total RMR." 
-                     So normally, RMR is at 100%. 
-                */}
+                {/* RMR Marker */}
+                <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-slate-400 dark:bg-gray-500 z-10 pointer-events-none"
+                    style={{ left: `${rmrMarkerPct}%` }}
+                ></div>
+
+                <div
+                    className="absolute -bottom-3 text-[9px] font-bold text-slate-400 dark:text-gray-500 transform -translate-x-1/2"
+                    style={{ left: `${rmrMarkerPct}%` }}
+                >
+                    RMR
+                </div>
             </div>
         </div>
     );

@@ -54,4 +54,38 @@ describe('Stats Component', () => {
         render(<Stats items={items} goal={2000} rmr={2000} />);
         expect(screen.getByText('200')).toBeInTheDocument();
     });
+
+    it('shows "Left" and green styling when under goal (State 1)', () => {
+        const items = [{ type: 'FOOD', calories: 1500 }]; // 2000 - 1500 = 500 Left
+        render(<Stats items={items} goal={2000} rmr={2500} />);
+
+        expect(screen.getByText('Left')).toBeInTheDocument();
+        expect(screen.getByText('Left')).toHaveClass('text-emerald-700');
+        expect(screen.getByText('500')).toBeInTheDocument();
+    });
+
+    it('shows "Over" and yellow styling when over goal but under RMR (State 2)', () => {
+        const items = [{ type: 'FOOD', calories: 2200 }]; // Goal 2000. Over by 200. RMR 2500.
+        render(<Stats items={items} goal={2000} rmr={2500} />);
+
+        expect(screen.getByText('Over')).toBeInTheDocument();
+        expect(screen.getByText('Over')).toHaveClass('text-amber-700');
+        expect(screen.getByText('200')).toBeInTheDocument();
+    });
+
+    it('shows "Over" and red styling when over RMR (State 3)', () => {
+        const items = [{ type: 'FOOD', calories: 2600 }]; // RMR 2500. Over by 600 from goal, 100 from RMR.
+        // Logic check:
+        // Net = 2600.
+        // Calories Left = 2000 - 2600 = -600.
+        // isOverGoal = true (-600 < 0).
+        // isOverRMR = true (2600 > 2500).
+        // Should be RED.
+
+        render(<Stats items={items} goal={2000} rmr={2500} />);
+
+        expect(screen.getByText('Over')).toBeInTheDocument();
+        expect(screen.getByText('Over')).toHaveClass('text-red-600');
+        expect(screen.getByText('600')).toBeInTheDocument();
+    });
 });

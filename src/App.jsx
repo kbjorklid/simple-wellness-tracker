@@ -13,6 +13,7 @@ import Toggle from './components/Toggle';
 
 import LibraryModal from './components/LibraryModal';
 import ReplaceLibraryItemModal from './components/ReplaceLibraryItemModal';
+import WeightDisplay from './components/WeightDisplay';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -171,6 +172,27 @@ function App() {
     setToastState(null);
   };
 
+  const handleWeightUpdate = async (newWeight) => {
+    try {
+      const existing = await db.userSettings.where({ date: currentDate }).first();
+
+      if (existing) {
+        await db.userSettings.update(existing.id, { weight: newWeight });
+      } else {
+        const rmr = userSettings?.rmr || 2000;
+        const deficit = userSettings?.deficit || 0;
+        await db.userSettings.add({
+          date: currentDate,
+          weight: newWeight,
+          rmr,
+          deficit
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update weight:", error);
+    }
+  };
+
   const handleToggleComplete = async (e) => {
     const isComplete = e.target.checked;
     await db.days.put({ date: currentDate, isComplete });
@@ -268,12 +290,18 @@ function App() {
               </button>
             </div>
             <div>
-              <div className="flex flex-col items-end gap-1">
-                <Toggle
-                  checked={isDayComplete}
-                  onChange={handleToggleComplete}
-                  label="Day Complete"
+              <div className="flex items-center gap-4">
+                <WeightDisplay
+                  weight={userSettings?.weight}
+                  onSave={handleWeightUpdate}
                 />
+                <div className="flex flex-col items-end gap-1">
+                  <Toggle
+                    checked={isDayComplete}
+                    onChange={handleToggleComplete}
+                    label="Day Complete"
+                  />
+                </div>
               </div>
             </div>
           </div>
