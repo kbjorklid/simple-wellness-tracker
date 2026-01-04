@@ -5,14 +5,14 @@ import ProgressBar from './ProgressBar';
 describe('ProgressBar', () => {
     // Helper to get widths of segments
     function getSegmentWidths(container) {
-        // Find the 3 divs inside the flex container
-        // The container is the one with flex-grow
-        const flexContainer = container.querySelector('.flex-grow');
-        const segments = flexContainer.querySelectorAll('div');
+        // The container with overflow-hidden is now inside the relative wrapper
+        // It's the div with rounded-full
+        const segmentsContainer = container.querySelector('.rounded-full');
+        const segments = segmentsContainer.querySelectorAll('div');
         return Array.from(segments).map(div => div.style.width);
     }
 
-    it('calculates percentage correctly (Under Goal)', () => {
+    it('calculates value correctly (Under Goal)', () => {
         const items = [
             { type: 'FOOD', calories: 1000, count: 1 },
         ];
@@ -21,7 +21,10 @@ describe('ProgressBar', () => {
         // Green = 1000 / 2500 = 40%
         const { container } = render(<ProgressBar items={items} goal={2000} rmr={2500} />);
 
-        expect(screen.getByText('50%')).toBeInTheDocument(); // 1000/2000 = 50% display
+        // Should see "1,000 kcal" (localized string might vary, but simplified regex or partial match)
+        expect(screen.getByText(/1,000/)).toBeInTheDocument();
+        expect(screen.getByText('kcal')).toBeInTheDocument();
+        expect(screen.getByText('GOAL')).toBeInTheDocument();
 
         const widths = getSegmentWidths(container);
         expect(widths[0]).toBe('40%'); // Green
@@ -34,13 +37,13 @@ describe('ProgressBar', () => {
             { type: 'FOOD', calories: 2200, count: 1 },
         ];
         // Goal 2000, RMR 2500. Net 2200.
-        // Scale = 2500.
-        // Green: 2000 (cap at goal) / 2500 = 80%
+        // Scale = RMR = 2500.
+        // Green: 2000 (filled to goal) / 2500 = 80%
         // Yellow: (2200 - 2000) = 200 / 2500 = 8%
         // Red: 0
         const { container } = render(<ProgressBar items={items} goal={2000} rmr={2500} />);
 
-        expect(screen.getByText('110%')).toBeInTheDocument(); // 2200/2000
+        expect(screen.getByText(/2,200/)).toBeInTheDocument();
 
         const widths = getSegmentWidths(container);
         expect(widths[0]).toBe('80%');
@@ -60,11 +63,9 @@ describe('ProgressBar', () => {
 
         const { container } = render(<ProgressBar items={items} goal={2000} rmr={2500} />);
 
-        expect(screen.getByText('150%')).toBeInTheDocument();
+        expect(screen.getByText(/3,000/)).toBeInTheDocument();
 
         const widths = getSegmentWidths(container);
-        // Using approximate matching or specific values
-        // 20/30 * 100
         expect(widths[0]).toContain('66.666');
         expect(widths[1]).toContain('16.666');
         expect(widths[2]).toContain('16.666');
@@ -77,8 +78,9 @@ describe('ProgressBar', () => {
         ];
         const { container } = render(<ProgressBar items={items} goal={2000} rmr={2000} />);
 
-        // Should clamp to 0%
-        expect(screen.getByText('0%')).toBeInTheDocument();
+        // Should clamp to 0 and show 0 kcal (or -100 if we want to be exact, but logic said just show net)
+        // Code renders netCalories.toLocaleString(), so "-100 kcal"
+        expect(screen.getByText(/-100/)).toBeInTheDocument();
 
         const widths = getSegmentWidths(container);
         expect(widths[0]).toBe('0%');

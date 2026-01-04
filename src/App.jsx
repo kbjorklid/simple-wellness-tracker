@@ -18,6 +18,7 @@ function App() {
   const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [libraryMode, setLibraryMode] = useState('select'); // 'select' or 'manage'
   const [toastState, setToastState] = useState(null); // { message, undoId, action }
   const [replaceDialogState, setReplaceDialogState] = useState(null); // { existing, new }
 
@@ -203,6 +204,7 @@ function App() {
         currentDate={currentDate}
         onManageLibrary={() => {
           setIsSettingsOpen(false);
+          setLibraryMode('manage');
           setIsLibraryOpen(true);
         }}
       />
@@ -211,6 +213,7 @@ function App() {
         isOpen={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
         onAdd={handleAddFromLibrary}
+        mode={libraryMode}
       />
 
       <ReplaceLibraryItemModal
@@ -283,7 +286,10 @@ function App() {
             onAdd={handleAdd}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
-            onOpenLibrary={() => setIsLibraryOpen(true)}
+            onOpenLibrary={() => {
+              setLibraryMode('select');
+              setIsLibraryOpen(true);
+            }}
             onSaveToLibrary={handleSaveToLibrary}
           />
 

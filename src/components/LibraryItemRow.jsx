@@ -12,7 +12,9 @@ export default function LibraryItemRow({
     onUpdate,
     onDelete,
     onCreate,
-    initialEditing = false
+    initialEditing = false,
+    readOnly = false,
+    selectable = true
 }) {
     const [isEditing, setIsEditing] = useState(initialEditing);
     const [draft, setDraft] = useState(item);
@@ -138,14 +140,16 @@ export default function LibraryItemRow({
     return (
         <div className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-lg bg-[#2a2715] p-4 transition-colors hover:bg-[#332f1a] border border-transparent hover:border-border-dark">
             <div className="flex flex-1 items-center gap-4 w-full min-w-0">
-                <div className="flex size-6 shrink-0 items-center justify-center">
-                    <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => onSelect(item.id, e.target.checked)}
-                        className="h-5 w-5 rounded border-[#685f31] border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 focus:outline-none cursor-pointer transition-colors"
-                    />
-                </div>
+                {selectable && (
+                    <div className="flex size-6 shrink-0 items-center justify-center">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => onSelect(item.id, e.target.checked)}
+                            className="h-5 w-5 rounded border-[#685f31] border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 focus:outline-none cursor-pointer transition-colors"
+                        />
+                    </div>
+                )}
                 <div className="flex flex-col justify-center grow min-w-0">
                     <p className="text-white text-base font-medium leading-normal truncate">{item.name}</p>
                     <div className="text-sm font-normal leading-normal flex items-center gap-2">
@@ -160,22 +164,24 @@ export default function LibraryItemRow({
 
             <div className="flex items-center gap-3 shrink-0 ml-10 sm:ml-0">
                 {/* Edit / Delete Actions */}
-                <div className="flex items-center gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="text-text-secondary hover:text-white p-1 rounded transition-colors"
-                        title="Edit"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
-                    <button
-                        onClick={() => onDelete(item.id)}
-                        className="text-text-secondary hover:text-red-400 p-1 rounded transition-colors"
-                        title="Delete"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
-                </div>
+                {!readOnly && (
+                    <div className="flex items-center gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="text-text-secondary hover:text-white p-1 rounded transition-colors"
+                            title="Edit"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                        <button
+                            onClick={() => onDelete(item.id)}
+                            className="text-text-secondary hover:text-red-400 p-1 rounded transition-colors"
+                            title="Delete"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                    </div>
+                )}
 
                 {item.type === 'FOOD' ? (
                     <>

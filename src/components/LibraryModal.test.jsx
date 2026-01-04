@@ -23,7 +23,8 @@ vi.mock('../db', () => {
             library: {
                 toCollection: vi.fn(),
                 update: mockUpdate,
-                delete: vi.fn()
+                delete: vi.fn(),
+                add: vi.fn()
             }
         }
     };
@@ -47,6 +48,7 @@ describe('LibraryModal', () => {
             toArray: () => Promise.resolve([...mockItems])
         });
         db.library.update.mockResolvedValue(1);
+        db.library.add.mockResolvedValue(100);
     });
 
     it('renders and sorts items by lastUsed descending', async () => {
@@ -100,11 +102,7 @@ describe('LibraryModal', () => {
     });
 
     it('allows creating a new item', async () => {
-        // Mock add
-        const mockAdd = vi.fn().mockResolvedValue(100);
-        db.library.add = mockAdd;
-
-        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} />);
+        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} mode="manage" />);
 
         // Open create row
         const newButton = screen.getByText('+ New Item');
@@ -114,29 +112,17 @@ describe('LibraryModal', () => {
         const nameInput = screen.getByPlaceholderText('Item name');
         fireEvent.change(nameInput, { target: { value: 'New Test Food' } });
 
-        const calorieInput = screen.getByDisplayValue('0'); // Default calories or placeholder
-        // Note: LibraryItemRow rendering logic for creating might have specific initial values, 
-        // e.g. calories initialized to empty string '' in passed item prop but validation might need number?
-        // Let's check LibraryItemRow logic: value={draft.minutes} etc. 
-        // In render, item={{..., calories: ''}}. 
-        // WellnessInput for number usually shows value.
-
-        // Find inputs by type/placeholder?
-        // Let's assume standardized placeholders in ItemMeasurementInputs:
-        // "kcal", "min".
-
-        // Finding inputs slightly relying on structure
-        const inputs = screen.getAllByRole('spinbutton'); // number inputs
-        // 0: calories, 1: minutes (if present/rendered)
-
+        // Find inputs by placeholder is safer, or rely on being the first spinbutton (which should be correct)
+        const inputs = screen.getAllByRole('spinbutton');
+        // The first one should be the calorie input of the new row at the top
         fireEvent.change(inputs[0], { target: { value: '250' } });
 
         // Save
-        const saveButton = screen.getByText('Save Changes'); // or handleSave triggering via Enter? LibraryItemRow has "Save Changes" button in edit mode.
+        const saveButton = screen.getByText('Save Changes');
         fireEvent.click(saveButton);
 
         await waitFor(() => {
-            expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+            expect(db.library.add).toHaveBeenCalledWith(expect.objectContaining({
                 name: 'New Test Food',
                 calories: 250,
                 type: 'FOOD'
@@ -145,29 +131,49 @@ describe('LibraryModal', () => {
     });
 
     it('hides create row on cancel', async () => {
-        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} />);
+        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} mode="manage" />);
         const newButton = screen.getByText('+ New Item');
         fireEvent.click(newButton);
 
         expect(screen.getByPlaceholderText('Item name')).toBeDefined();
 
-        const cancelButton = screen.getByText('Cancel'); // Needs to distinguish between Footer Cancel and Row Cancel?
-        // Row Cancel is inside the edit card. The Footer Cancel is outside.
-        // Row Cancel text is "Cancel". Footer is "Cancel".
-        // Use verify by context or getAllByText.
-
         const cancels = screen.getAllByText('Cancel');
-        // Usually the first one if creation row is at top?
-        // Or specific class match.
-        // Let's assume the one near "Save Changes" is the row one.
-        const rowCancel = cancels.find(el => el.closest('.border-primary\\/50')); // Edit card has border-primary/50
-        // Or more simply, click the first one if DOM order is reliable (Create row is top of list).
-
+        // Click the first cancel button (which should be the one in the creating row)
         fireEvent.click(cancels[0]);
 
         await waitFor(() => {
             // Should be back to initial view, name input gone
             expect(screen.queryByPlaceholderText('Item name')).toBeNull();
         });
+    });
+
+    it('renders correct title and hides actions in select mode', async () => {
+        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} mode="select" />);
+        expect(screen.getByText('Add from Library')).toBeDefined();
+        expect(screen.queryByText('+ New Item')).toBeNull();
+
+        await waitFor(() => expect(screen.getByText('Banana')).toBeDefined());
+
+        // Check actions (Edit/Delete) are hidden
+        const startState = screen.getByText('Banana').closest('.group');
+        expect(startState.querySelector('button[title="Edit"]')).toBeNull();
+    });
+
+    it('renders correct title and shows actions in manage mode', async () => {
+        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} mode="manage" />);
+        expect(screen.getByText('Manage Library')).toBeDefined();
+        expect(screen.getByText('+ New Item')).toBeDefined();
+
+        await waitFor(() => expect(screen.getByText('Banana')).toBeDefined());
+
+        // Check actions exist
+        const startState = screen.getByText('Banana').closest('.group');
+        expect(startState.querySelector('button[title="Edit"]')).toBeDefined();
+
+        // Check checkboxes are hidden
+        expect(screen.queryByRole('checkbox')).toBeNull();
+
+        // Check footer (Add Selected) is hidden
+        expect(screen.queryByText('Add Selected')).toBeNull();
     });
 });

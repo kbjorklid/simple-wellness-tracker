@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import LibraryItemRow from './LibraryItemRow';
 
-export default function LibraryModal({ isOpen, onClose, onAdd }) {
+export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select' }) {
     const [isCreating, setIsCreating] = useState(false);
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState('ALL'); // ALL, FOOD, EXERCISE
@@ -177,14 +177,18 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                 {/* Header */}
                 <div className="flex flex-col gap-4 border-b border-border-dark px-6 py-5 bg-[#232010] z-10 shrink-0">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Library</h2>
+                        <h2 className="text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">
+                            {mode === 'manage' ? 'Manage Library' : 'Add from Library'}
+                        </h2>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsCreating(true)}
-                                className={`text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors ${isCreating ? 'opacity-50 pointer-events-none' : ''}`}
-                            >
-                                + New Item
-                            </button>
+                            {mode === 'manage' && (
+                                <button
+                                    onClick={() => setIsCreating(true)}
+                                    className={`text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors ${isCreating ? 'opacity-50 pointer-events-none' : ''}`}
+                                >
+                                    + New Item
+                                </button>
+                            )}
                             <button
                                 onClick={onClose}
                                 className="text-text-secondary hover:text-white transition-colors p-1 rounded-md hover:bg-white/5"
@@ -257,6 +261,8 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                                         onAdjust={handleAdjustment}
                                         onUpdate={handleUpdateItem}
                                         onDelete={handleDeleteItem}
+                                        readOnly={mode !== 'manage'}
+                                        selectable={mode !== 'manage'}
                                     />
                                 );
                             })
@@ -265,26 +271,28 @@ export default function LibraryModal({ isOpen, onClose, onAdd }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-border-dark bg-[#1e1c0e] px-6 py-4 shrink-0 gap-4">
-                    <button
-                        onClick={onClose}
-                        className="w-full sm:w-auto text-text-secondary hover:text-white font-medium px-4 py-2 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <span className="hidden sm:inline-block text-sm text-text-secondary">
-                            {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected
-                        </span>
+                {mode !== 'manage' && (
+                    <div className="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-border-dark bg-[#1e1c0e] px-6 py-4 shrink-0 gap-4">
                         <button
-                            onClick={handleAddSelected}
-                            disabled={selectedCount === 0}
-                            className="w-full sm:w-auto bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:hover:bg-primary text-[#221f10] text-base font-bold leading-normal px-8 py-3 rounded-lg shadow-lg shadow-yellow-900/20 transition-all hover:translate-y-[-1px] active:translate-y-0"
+                            onClick={onClose}
+                            className="w-full sm:w-auto text-text-secondary hover:text-white font-medium px-4 py-2 transition-colors"
                         >
-                            Add Selected
+                            Cancel
                         </button>
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <span className="hidden sm:inline-block text-sm text-text-secondary">
+                                {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected
+                            </span>
+                            <button
+                                onClick={handleAddSelected}
+                                disabled={selectedCount === 0}
+                                className="w-full sm:w-auto bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:hover:bg-primary text-[#221f10] text-base font-bold leading-normal px-8 py-3 rounded-lg shadow-lg shadow-yellow-900/20 transition-all hover:translate-y-[-1px] active:translate-y-0"
+                            >
+                                Add Selected
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
