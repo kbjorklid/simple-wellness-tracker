@@ -54,7 +54,7 @@ export default function Stats({ items = [], goal = 2000, rmr = 2000 }) {
     const caloriesLeft = goal - netCalories;
 
     return (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="flex flex-col justify-center gap-0.5 rounded-lg px-3 py-2 bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark shadow-sm">
                 <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-gray-500">Goal</p>
                 <p className="text-slate-900 dark:text-white tracking-tight text-lg font-bold leading-none">{goal}</p>

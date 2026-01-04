@@ -14,7 +14,7 @@ export default function ActivityLog({ items, libraryItemNames, onAdd, onDelete, 
             <div className="px-3 py-2 border-b border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-card-dark flex justify-between items-center">
                 <h3 className="text-slate-900 dark:text-white font-bold text-sm">Activity Log</h3>
             </div>
-            <div className="grid grid-cols-[20px_60px_48px_1fr_160px_60px] gap-3 px-3 py-1.5 border-b border-gray-100 dark:border-border-dark bg-white dark:bg-card-dark text-[10px] font-bold uppercase text-slate-400 dark:text-gray-500">
+            <div className="hidden md:grid grid-cols-[20px_60px_48px_1fr_160px_60px] gap-3 px-3 py-1.5 border-b border-gray-100 dark:border-border-dark bg-white dark:bg-card-dark text-[10px] font-bold uppercase text-slate-400 dark:text-gray-500">
                 <div></div>
                 <div className="text-center">Count</div>
                 <div className="text-center">Type</div>

@@ -224,6 +224,7 @@ function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         currentDate={currentDate}
+        settings={userSettings}
         onManageLibrary={() => {
           setIsSettingsOpen(false);
           setLibraryMode('manage');

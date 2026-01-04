@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SettingsDialog from './SettingsDialog';
 import { db } from '../db';
-import { useLiveQuery } from 'dexie-react-hooks';
+
 
 // Mock DB and Dexie hooks
 vi.mock('../db', () => ({
@@ -15,9 +15,7 @@ vi.mock('../db', () => ({
     }
 }));
 
-vi.mock('dexie-react-hooks', () => ({
-    useLiveQuery: vi.fn()
-}));
+
 
 describe('SettingsDialog', () => {
     const mockOnClose = vi.fn();
@@ -33,14 +31,13 @@ describe('SettingsDialog', () => {
     });
 
     it('renders inputs when open', () => {
-        // Mock return of useLiveQuery
-        useLiveQuery.mockReturnValue({
+        const settings = {
             weight: 70,
             rmr: 1500,
             deficit: 500
-        });
+        };
 
-        render(<SettingsDialog isOpen={true} onClose={mockOnClose} currentDate={currentDate} />);
+        render(<SettingsDialog isOpen={true} onClose={mockOnClose} currentDate={currentDate} settings={settings} />);
 
         expect(screen.getByText(`Settings for ${currentDate}`)).toBeInTheDocument();
         expect(screen.getByDisplayValue('70')).toBeInTheDocument();
@@ -49,15 +46,12 @@ describe('SettingsDialog', () => {
     });
 
     it('saves settings', async () => {
-        // Mock empty initial settings so inputs are empty or controlled by state default
-        useLiveQuery.mockReturnValue(undefined);
-
         // Mock DB checks
         const firstMock = vi.fn();
         db.userSettings.where.mockReturnValue({ first: firstMock });
         firstMock.mockResolvedValue(null); // No existing record for EXACT date
 
-        render(<SettingsDialog isOpen={true} onClose={mockOnClose} currentDate={currentDate} />);
+        render(<SettingsDialog isOpen={true} onClose={mockOnClose} currentDate={currentDate} settings={undefined} />);
 
         const inputs = screen.getAllByRole('spinbutton');
         // weight, rmr, deficit

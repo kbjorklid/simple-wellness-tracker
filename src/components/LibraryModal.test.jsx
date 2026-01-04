@@ -10,7 +10,7 @@ vi.mock('dexie-react-hooks', () => ({
         const [value, setValue] = React.useState(null);
         React.useEffect(() => {
             Promise.resolve(querier()).then(setValue);
-        }, [querier, ...deps]);
+        }, deps || [querier]);
         return value;
     }
 }));

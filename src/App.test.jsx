@@ -19,7 +19,8 @@ describe('App', () => {
 
     it('renders initial items and stats', async () => {
         render(<App />);
-        expect(await screen.findByText('Oatmeal & Berries')).toBeInTheDocument();
+        const items = await screen.findAllByText('Oatmeal & Berries');
+        expect(items[0]).toBeInTheDocument();
         expect(screen.getByText('Goal')).toBeInTheDocument();
         expect(screen.getByText('2000')).toBeInTheDocument();
     });
@@ -28,7 +29,7 @@ describe('App', () => {
         render(<App />);
 
         // Wait to load
-        await screen.findByText('Oatmeal & Berries');
+        await screen.findAllByText('Oatmeal & Berries');
 
         const nameInput = screen.getByPlaceholderText('Quick add item...');
         const calInput = screen.getByLabelText('Calories');
@@ -42,20 +43,19 @@ describe('App', () => {
         expect(toggleBtn).toBeInTheDocument();
 
         // Add
-        const quickAddContainer = nameInput.closest('.grid');
-        const checkIcon = within(quickAddContainer).getByText('check');
-        const checkBtn = checkIcon.closest('button');
+        const checkBtn = screen.getByText('check').closest('button');
 
         expect(checkBtn).not.toBeDisabled();
         fireEvent.click(checkBtn);
 
-        expect(await screen.findByText('New Food')).toBeInTheDocument();
+        const newItems = await screen.findAllByText('New Food');
+        expect(newItems[0]).toBeInTheDocument();
     });
 
     it('adds an exercise item (negative calories)', async () => {
         render(<App />);
 
-        await screen.findByText('Oatmeal & Berries');
+        await screen.findAllByText('Oatmeal & Berries');
 
         const nameInput = screen.getByPlaceholderText('Quick add item...');
 
@@ -70,25 +70,26 @@ describe('App', () => {
         const caloriesInput = screen.getByLabelText('Calories');
         fireEvent.change(caloriesInput, { target: { value: '300' } });
 
-        const quickAddContainer = nameInput.closest('.grid');
-        const checkIcon = within(quickAddContainer).getByText('check');
-        const checkBtn = checkIcon.closest('button');
+        const checkBtn = screen.getByText('check').closest('button');
 
         expect(checkBtn).not.toBeDisabled();
         fireEvent.click(checkBtn);
 
-        expect(await screen.findByText('Running')).toBeInTheDocument();
+        const runningItems = await screen.findAllByText('Running');
+        expect(runningItems[0]).toBeInTheDocument();
         const negCals = screen.getAllByText('-300');
         expect(negCals.length).toBeGreaterThan(0);
     });
 
     it('deletes an item', async () => {
         render(<App />);
-        const item = await screen.findByText('Oatmeal & Berries');
+        const items = await screen.findAllByText('Oatmeal & Berries');
+        const item = items[0];
         expect(item).toBeInTheDocument();
 
-        const row = item.closest('.group').querySelector('.grid');
-        const closeBtn = within(row).getByText('delete').closest('button');
+        const row = item.closest('.group');
+        const closeBtns = within(row).getAllByText('delete');
+        const closeBtn = closeBtns[0].closest('button');
         fireEvent.click(closeBtn);
 
         await waitFor(() => {
@@ -102,24 +103,27 @@ describe('App', () => {
         // Check initial Food total
         await screen.findByText(startTotal.toString());
 
-        const item = await screen.findByText('Oatmeal & Berries');
+        const items = await screen.findAllByText('Oatmeal & Berries');
+        const item = items[0];
         // Find the + button in the row
         const row = item.closest('.group');
-        const addBtn = within(row).getByText('add');
+        const addBtns = within(row).getAllByText('add');
+        const addBtn = addBtns[0];
 
         fireEvent.click(addBtn); // Count becomes 2
 
         // Oatmeal is 350. Extra 350 added. Total should be startTotal + 350.
-        expect(await screen.findByText((startTotal + 350).toString())).toBeInTheDocument();
+        const totalItems = await screen.findAllByText((startTotal + 350).toString());
+        expect(totalItems.length).toBeGreaterThan(0);
 
-        const removeBtn = within(row).getByText('remove');
-        fireEvent.click(removeBtn); // Back to 1
+        const removeBtns = within(row).getAllByText('remove');
+        fireEvent.click(removeBtns[0]); // Back to 1
 
         expect(await screen.findByText(startTotal.toString())).toBeInTheDocument();
     });
     it('toggles day complete status', async () => {
         render(<App />);
-        await screen.findByText('Oatmeal & Berries');
+        await screen.findAllByText('Oatmeal & Berries');
 
         // Initial state: not checked
         const toggle = screen.getByLabelText('Day Complete');
@@ -149,12 +153,13 @@ describe('App', () => {
     });
     it('saves item to library with lastUsed timestamp', async () => {
         render(<App />);
-        const item = await screen.findByText('Oatmeal & Berries');
+        const items = await screen.findAllByText('Oatmeal & Berries');
+        const item = items[0];
         const row = item.closest('.group');
 
         // Find bookmark button
-        const bookmarkBtn = within(row).getByTitle('Save to Library');
-        fireEvent.click(bookmarkBtn);
+        const bookmarkBtns = within(row).getAllByTitle('Save to Library');
+        fireEvent.click(bookmarkBtns[0]);
 
         // Wait for toast
         await screen.findByText('Saved to library');
@@ -189,7 +194,8 @@ describe('App', () => {
         fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
         // Should show 70
-        expect(await screen.findByText('70')).toBeInTheDocument();
+        const weightItems = await screen.findAllByText('70');
+        expect(weightItems[0]).toBeInTheDocument();
 
         // Check DB
         const setting = await db.userSettings.where({ date: today }).first();

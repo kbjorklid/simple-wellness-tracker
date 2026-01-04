@@ -1,35 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../db';
-import { useLiveQuery } from 'dexie-react-hooks';
 import WellnessInput from './WellnessInput';
 
-export default function SettingsDialog({ isOpen, onClose, currentDate, onManageLibrary }) {
+export default function SettingsDialog({ isOpen, onClose, currentDate, onManageLibrary, settings }) {
     const [weight, setWeight] = useState('');
     const [rmr, setRmr] = useState('');
     const [deficit, setDeficit] = useState('');
 
-    // Fetch the most recent settings on or before currentDate
-    const effectiveSettings = useLiveQuery(async () => {
-        if (!isOpen) return null;
-        return await db.userSettings
-            .where('date')
-            .belowOrEqual(currentDate)
-            .last();
-    }, [isOpen, currentDate]);
-
     useEffect(() => {
-        if (effectiveSettings) {
-            setWeight(effectiveSettings.weight);
-            setRmr(effectiveSettings.rmr);
-            setDeficit(effectiveSettings.deficit);
+        if (settings) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            setWeight(settings.weight);
+            setRmr(settings.rmr);
+            setDeficit(settings.deficit);
         } else if (isOpen) {
-            // Defaults if no settings exist yet
-            // Don't overwrite if user has started typing, but simple case: valid when first opening
-            // To be safer, we could only set if these are empty, but effectiveSettings changes on date change
-            // Let's just set them.
-            // If completely new, maybe defaults?
+            // Defaults handled by initial state '' or could be set here
         }
-    }, [effectiveSettings, isOpen]);
+    }, [settings, isOpen]);
 
     const handleSave = async () => {
         try {

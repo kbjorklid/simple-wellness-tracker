@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import WellnessInput from './WellnessInput';
 
 export default function WeightDisplay({ weight, onSave, unit = 'kg' }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState('');
-
-    useEffect(() => {
-        if (!isEditing) {
-            setEditValue(weight ? weight.toString() : '');
-        }
-    }, [weight, isEditing]);
 
     const handleSave = () => {
         const val = parseFloat(editValue);
@@ -24,8 +18,12 @@ export default function WeightDisplay({ weight, onSave, unit = 'kg' }) {
             handleSave();
         } else if (e.key === 'Escape') {
             setIsEditing(false);
-            setEditValue(weight ? weight.toString() : '');
         }
+    };
+
+    const startEditing = () => {
+        setEditValue(weight ? weight.toString() : '');
+        setIsEditing(true);
     };
 
     if (isEditing) {
@@ -48,7 +46,7 @@ export default function WeightDisplay({ weight, onSave, unit = 'kg' }) {
     return (
         <button
             className="group flex flex-col items-end gap-0.5 cursor-pointer text-right min-w-[60px]"
-            onClick={() => setIsEditing(true)}
+            onClick={startEditing}
             title="Click to edit weight"
         >
             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-gray-500 flex items-center gap-1">
