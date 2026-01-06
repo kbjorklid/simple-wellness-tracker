@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../db';
 import WellnessInput from './WellnessInput';
-import { calculateRMR, calculateAge } from '../utils/rmr';
+import { calculateRMR, calculateAge, ACTIVITY_FACTORS } from '../utils/rmr';
 
 export default function SettingsDialog({ isOpen, onClose, currentDate, onManageLibrary, settings }) {
     const [weight, setWeight] = useState('');
@@ -11,6 +11,7 @@ export default function SettingsDialog({ isOpen, onClose, currentDate, onManageL
     const [gender, setGender] = useState('female');
     const [dob, setDob] = useState('');
     const [age, setAge] = useState(null);
+    const [activityLevel, setActivityLevel] = useState('sedentary');
 
     useEffect(() => {
         if (settings) {
@@ -20,6 +21,7 @@ export default function SettingsDialog({ isOpen, onClose, currentDate, onManageL
             setHeight(settings.height || '');
             setGender(settings.gender || 'female');
             setDob(settings.dob || '');
+            setActivityLevel(settings.activityLevel || 'sedentary');
         } else if (isOpen) {
             // Defaults or retain current state if opening fresh
         }
@@ -33,18 +35,18 @@ export default function SettingsDialog({ isOpen, onClose, currentDate, onManageL
         }
     }, [dob]);
 
-    // Auto-calculate RMR when dependencies change
+    // Auto-calculate RMR (TDEE) when dependencies change
     useEffect(() => {
-        if (weight && height && age && gender) {
-            const calculated = calculateRMR(parseFloat(weight), parseFloat(height), age, gender);
-            if (calculated > 0) {
-                // Only auto-set if RMR field is empty or user hasn't manually overridden it?
-                // For now, let's just show it as a suggestion or auto-fill if empty/zero?
-                // Or better: Auto-update RMR state
-                setRmr(calculated);
+        if (weight && height && age && gender && activityLevel) {
+            const baseRmr = calculateRMR(parseFloat(weight), parseFloat(height), age, gender);
+            const factor = ACTIVITY_FACTORS[activityLevel]?.value || 1.2;
+            const tdee = Math.round(baseRmr * factor);
+
+            if (tdee > 0) {
+                setRmr(tdee);
             }
         }
-    }, [weight, height, age, gender]);
+    }, [weight, height, age, gender, activityLevel]);
 
 
     const handleSave = async () => {
@@ -58,7 +60,8 @@ export default function SettingsDialog({ isOpen, onClose, currentDate, onManageL
                 deficit: parseFloat(deficit) || 0,
                 height: parseFloat(height) || 0,
                 gender: gender,
-                dob: dob
+                dob: dob,
+                activityLevel: activityLevel
             };
 
             if (existingForDate) {
@@ -111,6 +114,20 @@ export default function SettingsDialog({ isOpen, onClose, currentDate, onManageL
                         </div>
                     </div>
 
+                    <div className="space-y-1.5">
+                        <label htmlFor="setting-activity" className="text-xs font-bold text-primary uppercase tracking-wide">Activity Level</label>
+                        <select
+                            id="setting-activity"
+                            value={activityLevel}
+                            onChange={(e) => setActivityLevel(e.target.value)}
+                            className="w-full p-3 bg-white dark:bg-input-bg-dark border border-gray-200 dark:border-border-dark rounded-lg text-base font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        >
+                            {Object.entries(ACTIVITY_FACTORS).map(([key, { label }]) => (
+                                <option key={key} value={key}>{label}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-primary uppercase tracking-wide">Height (cm)</label>
@@ -135,27 +152,27 @@ export default function SettingsDialog({ isOpen, onClose, currentDate, onManageL
                     <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-100 dark:border-yellow-900/20 space-y-4">
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-end">
-                                <label className="text-xs font-bold text-primary uppercase tracking-wide">RMR (Calories)</label>
+                                <label className="text-xs font-bold text-primary uppercase tracking-wide">Daily Target (TDEE)</label>
                                 <span className="text-[10px] font-medium text-slate-400 dark:text-gray-500">Auto-calculated</span>
                             </div>
                             <WellnessInput
                                 type="number"
-                                placeholder="e.g. 1800"
+                                placeholder="e.g. 2000"
                                 value={rmr}
                                 onChange={(e) => setRmr(e.target.value)}
                             />
-                            <p className="text-[10px] text-slate-500 dark:text-gray-500">The calories your body burns at rest.</p>
+                            <p className="text-[10px] text-slate-500 dark:text-gray-500">Estimated total daily calories burned.</p>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-primary uppercase tracking-wide">Target Deficit</label>
+                            <label className="text-xs font-bold text-primary uppercase tracking-wide">Deifcit Goal</label>
                             <WellnessInput
                                 type="number"
                                 placeholder="e.g. 500"
                                 value={deficit}
                                 onChange={(e) => setDeficit(e.target.value)}
                             />
-                            <p className="text-[10px] text-slate-500 dark:text-gray-500">Calories below RMR to eat.</p>
+                            <p className="text-[10px] text-slate-500 dark:text-gray-500">Calories below TDEE to eat.</p>
                         </div>
                     </div>
                 </div>

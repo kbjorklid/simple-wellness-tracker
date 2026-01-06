@@ -46,9 +46,12 @@ describe('SettingsDialog', () => {
     });
 
     it('saves settings with auto-calculated RMR', async () => {
-        // Set system time to fixed date for deterministic age calculation
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date('2023-01-01'));
+        // We assume "today" is 2026 (system time).
+        // DOB: 1990-01-01. Age = 36.
+        // BMR (Mifflin, Male, 80kg, 180cm, 36y):
+        // 10*80 + 6.25*180 - 5*36 + 5
+        // 800 + 1125 - 180 + 5 = 1750.
+        // TDEE (Sedentary 1.2) = 1750 * 1.2 = 2100.
 
         // Mock DB checks
         const firstMock = vi.fn();
@@ -61,12 +64,13 @@ describe('SettingsDialog', () => {
         // Height, Weight, RMR, Deficit
         fireEvent.change(screen.getByPlaceholderText('e.g. 175'), { target: { value: '180' } });
         fireEvent.change(screen.getByPlaceholderText('e.g. 75'), { target: { value: '80' } });
-        fireEvent.change(screen.getByPlaceholderText('e.g. 1800'), { target: { value: '2000' } });
+        fireEvent.change(screen.getByPlaceholderText('e.g. 2000'), { target: { value: '2000' } });
         fireEvent.change(screen.getByPlaceholderText('e.g. 500'), { target: { value: '300' } });
 
         // Gender and DOB using accessible labels
         fireEvent.change(screen.getByLabelText('Gender'), { target: { value: 'male' } });
         fireEvent.change(screen.getByLabelText('Date of Birth'), { target: { value: '1990-01-01' } });
+        fireEvent.change(screen.getByLabelText('Activity Level'), { target: { value: 'sedentary' } });
 
         const saveBtn = screen.getByText('Save Changes');
         fireEvent.click(saveBtn);
@@ -75,16 +79,15 @@ describe('SettingsDialog', () => {
             expect(db.userSettings.add).toHaveBeenCalledWith({
                 date: currentDate,
                 weight: 80,
-                rmr: 1750,
+                rmr: 2100, // TDEE (Age 36)
                 deficit: 300,
                 height: 180,
                 gender: 'male',
-                dob: '1990-01-01'
+                dob: '1990-01-01',
+                activityLevel: 'sedentary'
             });
             expect(mockOnClose).toHaveBeenCalled();
         });
-
-        vi.useRealTimers();
     });
 
     it('calls onManageLibrary when button clicked', () => {

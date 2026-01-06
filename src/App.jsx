@@ -178,41 +178,37 @@ function App() {
       const existing = await db.userSettings.where({ date: currentDate }).first();
 
       if (existing) {
-        let updates = { weight: newWeight };
+        // Auto-calculate new RMR (TDEE) based on new weight if we have profile data
+        let newRmr = existing.rmr;
+        const height = existing.height;
+        const gender = existing.gender;
+        const dob = existing.dob;
+        const activityLevel = existing.activityLevel || 'sedentary';
 
-        // Recalculate RMR if possible
-        if (existing.height && existing.gender && existing.dob) {
-          const age = calculateAge(existing.dob);
-          const newRmr = calculateRMR(newWeight, existing.height, age, existing.gender);
-          if (newRmr > 0) {
-            updates.rmr = newRmr;
-          }
+        if (height && gender && dob) {
+          const age = calculateAge(dob);
+          const bmr = calculateRMR(parseFloat(newWeight), parseFloat(height), age, gender);
+          const factor = ACTIVITY_FACTORS[activityLevel]?.value || 1.2;
+          newRmr = Math.round(bmr * factor);
         }
 
-        await db.userSettings.update(existing.id, updates);
+        await db.userSettings.update(existing.id, { weight: newWeight, rmr: newRmr });
       } else {
-        // If creating new settings for today, try to get previous settings to carry over non-weight fields?
-        // For now, adhere to existing logic but maybe try to calc RMR if we have previous data?
-        // The original logic just copied previous RMR/Deficit or used defaults.
+        // Carry over from previous settings if available
+        const lastSettings = userSettings; // This is already the latest before or equal to currentDate
 
-        // Let's try to find the MOST RECENT settings before today to get height/gender/dob
-        const lastSettings = await db.userSettings.where('date').below(currentDate).last();
+        let rmr = lastSettings?.rmr || 2000;
+        const deficit = lastSettings?.deficit || 0;
+        const height = lastSettings?.height;
+        const gender = lastSettings?.gender;
+        const dob = lastSettings?.dob;
+        const activityLevel = lastSettings?.activityLevel || 'sedentary';
 
-        let rmr = userSettings?.rmr || 2000;
-        const deficit = userSettings?.deficit || 0;
-
-        let height, gender, dob;
-
-        if (lastSettings) {
-          height = lastSettings.height;
-          gender = lastSettings.gender;
-          dob = lastSettings.dob;
-
-          if (height && gender && dob) {
-            const age = calculateAge(dob);
-            const calcRmr = calculateRMR(newWeight, height, age, gender);
-            if (calcRmr > 0) rmr = calcRmr;
-          }
+        if (height && gender && dob) {
+          const age = calculateAge(dob);
+          const bmr = calculateRMR(parseFloat(newWeight), parseFloat(height), age, gender);
+          const factor = ACTIVITY_FACTORS[activityLevel]?.value || 1.2;
+          rmr = Math.round(bmr * factor);
         }
 
         await db.userSettings.add({
@@ -221,8 +217,9 @@ function App() {
           rmr,
           deficit,
           height,
-          gender,
-          dob
+          gender, // Carry over
+          dob,     // Carry over
+          activityLevel // Carry over
         });
       }
     } catch (error) {

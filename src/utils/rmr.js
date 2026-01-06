@@ -27,6 +27,14 @@ export function calculateRMR(weightKg, heightCm, ageYears, gender) {
     return Math.round(rmr);
 }
 
+export const ACTIVITY_FACTORS = {
+    sedentary: { value: 1.2, label: 'Sedentary (little or no exercise)' },
+    light: { value: 1.375, label: 'Lightly energetic (light exercise 1-3 days/week)' },
+    moderate: { value: 1.55, label: 'Moderately energetic (moderate exercise 3-5 days/week)' },
+    active: { value: 1.725, label: 'Very energetic (hard exercise 6-7 days/week)' },
+    extra: { value: 1.9, label: 'Extra energetic (very hard exercise & physical job)' }
+};
+
 /**
  * Calculates age from Date of Birth
  * @param {string|Date} dob - Date of birth

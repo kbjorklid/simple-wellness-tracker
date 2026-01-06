@@ -17,4 +17,8 @@ db.version(5).stores({
     userSettings: '++id, date, weight, height, gender, dob, deficit, rmr'
 });
 
+db.version(6).stores({
+    userSettings: '++id, date, weight, height, gender, dob, deficit, rmr, activityLevel'
+});
+
 
