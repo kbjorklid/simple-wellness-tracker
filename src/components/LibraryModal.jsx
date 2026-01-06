@@ -66,11 +66,17 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select', 
                 // Normal Library Mode
                 let collection = db.library.toCollection();
                 return collection.toArray().then(items => {
-                    return items.sort((a, b) => {
-                        const dateA = a.lastUsed || 0;
-                        const dateB = b.lastUsed || 0;
-                        if (dateB !== dateA) return dateB - dateA;
-                        return a.name.localeCompare(b.name);
+                    return collection.toArray().then(items => {
+                        return items.sort((a, b) => {
+                            const countA = a.usageCount || 0;
+                            const countB = b.usageCount || 0;
+                            if (countA !== countB) return countB - countA;
+
+                            const dateA = a.lastUsed || 0;
+                            const dateB = b.lastUsed || 0;
+                            if (dateB !== dateA) return dateB - dateA;
+                            return a.name.localeCompare(b.name);
+                        });
                     });
                 });
             }
@@ -128,7 +134,8 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select', 
                 minutes: parseInt(newItem.minutes) || 30,
                 description: newItem.description || '',
                 norm_name: newItem.name.trim().toLowerCase(),
-                lastUsed: Date.now()
+                lastUsed: Date.now(),
+                usageCount: 0
             });
             setIsCreating(false);
         } catch (error) {
@@ -189,6 +196,8 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select', 
                 ...item,
                 // Override with adjustments (except id)
                 id: undefined, // Create new ID for log
+                libraryId: item.id, // Link to library item
+
                 count: item.type === 'FOOD' ? (adj.count || 1) : 1, // Store count for food
                 minutes: finalMinutes,
                 calories: finalCalories,

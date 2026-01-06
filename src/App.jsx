@@ -56,6 +56,7 @@ function App() {
   const deficit = userSettings?.deficit || 0;
   const goal = rmr - deficit;
 
+
   const handleAdd = async (newItem) => {
     try {
       const id = await db.items.add({ ...newItem, date: currentDate });
@@ -67,7 +68,21 @@ function App() {
 
   const handleAddFromLibrary = async (newItems) => {
     try {
-      await db.items.bulkAdd(newItems.map(item => ({ ...item, date: currentDate })));
+      await db.items.bulkAdd(newItems.map(item => {
+        // eslint-disable-next-line no-unused-vars
+        const { libraryId, ...rest } = item;
+        return { ...rest, date: currentDate };
+      }));
+
+      // Increment usage count for library items
+      newItems.forEach(item => {
+        if (item.libraryId) {
+          db.library.where('id').equals(item.libraryId).modify(libItem => {
+            libItem.usageCount = (libItem.usageCount || 0) + 1;
+          }).catch(err => console.error("Failed to increment usage count", err));
+        }
+      });
+
       setToastState({
         message: `Added ${newItems.length} item${newItems.length !== 1 ? 's' : ''}`,
         action: undefined
@@ -89,7 +104,8 @@ function App() {
         minutes: parseInt(item.minutes) || 30,
         description: item.description || '',
         norm_name: normName,
-        lastUsed: Date.now()
+        lastUsed: Date.now(),
+        usageCount: 1
       };
 
       if (existing) {
@@ -105,7 +121,7 @@ function App() {
             message: 'Item already exists in library',
             action: {
               label: 'Replace',
-              onClick: () => setReplaceDialogState({ existing, new: { ...newItem, lastUsed: Date.now() } })
+              onClick: () => setReplaceDialogState({ existing, new: { ...newItem, lastUsed: Date.now(), usageCount: existing.usageCount || 0 } })
             }
           });
         } else {
