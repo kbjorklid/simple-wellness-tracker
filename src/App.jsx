@@ -14,6 +14,7 @@ import Toggle from './components/Toggle';
 import LibraryModal from './components/LibraryModal';
 import ReplaceLibraryItemModal from './components/ReplaceLibraryItemModal';
 import WeightDisplay from './components/WeightDisplay';
+import { calculateRMR, calculateAge } from './utils/rmr';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -177,15 +178,51 @@ function App() {
       const existing = await db.userSettings.where({ date: currentDate }).first();
 
       if (existing) {
-        await db.userSettings.update(existing.id, { weight: newWeight });
+        let updates = { weight: newWeight };
+
+        // Recalculate RMR if possible
+        if (existing.height && existing.gender && existing.dob) {
+          const age = calculateAge(existing.dob);
+          const newRmr = calculateRMR(newWeight, existing.height, age, existing.gender);
+          if (newRmr > 0) {
+            updates.rmr = newRmr;
+          }
+        }
+
+        await db.userSettings.update(existing.id, updates);
       } else {
-        const rmr = userSettings?.rmr || 2000;
+        // If creating new settings for today, try to get previous settings to carry over non-weight fields?
+        // For now, adhere to existing logic but maybe try to calc RMR if we have previous data?
+        // The original logic just copied previous RMR/Deficit or used defaults.
+
+        // Let's try to find the MOST RECENT settings before today to get height/gender/dob
+        const lastSettings = await db.userSettings.where('date').below(currentDate).last();
+
+        let rmr = userSettings?.rmr || 2000;
         const deficit = userSettings?.deficit || 0;
+
+        let height, gender, dob;
+
+        if (lastSettings) {
+          height = lastSettings.height;
+          gender = lastSettings.gender;
+          dob = lastSettings.dob;
+
+          if (height && gender && dob) {
+            const age = calculateAge(dob);
+            const calcRmr = calculateRMR(newWeight, height, age, gender);
+            if (calcRmr > 0) rmr = calcRmr;
+          }
+        }
+
         await db.userSettings.add({
           date: currentDate,
           weight: newWeight,
           rmr,
-          deficit
+          deficit,
+          height,
+          gender,
+          dob
         });
       }
     } catch (error) {
@@ -237,6 +274,7 @@ function App() {
         onClose={() => setIsLibraryOpen(false)}
         onAdd={handleAddFromLibrary}
         mode={libraryMode}
+        currentDate={currentDate}
       />
 
       <ReplaceLibraryItemModal
@@ -317,6 +355,10 @@ function App() {
             onDelete={handleDelete}
             onOpenLibrary={() => {
               setLibraryMode('select');
+              setIsLibraryOpen(true);
+            }}
+            onOpenHistory={() => {
+              setLibraryMode('history');
               setIsLibraryOpen(true);
             }}
             onSaveToLibrary={handleSaveToLibrary}

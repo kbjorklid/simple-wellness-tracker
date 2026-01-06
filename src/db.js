@@ -13,4 +13,8 @@ db.version(4).stores({
     library: '++id, name, type, calories, minutes, description, norm_name, lastUsed'
 });
 
+db.version(5).stores({
+    userSettings: '++id, date, weight, height, gender, dob, deficit, rmr'
+});
+
 

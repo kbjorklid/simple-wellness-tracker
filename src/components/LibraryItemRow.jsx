@@ -183,7 +183,8 @@ export default function LibraryItemRow({
                     </div>
                 )}
 
-                {item.type === 'FOOD' ? (
+                {/* Quantity / Time Actions - Only show if selectable (not in Manage mode) */}
+                {selectable && (item.type === 'FOOD' ? (
                     <>
                         <span className="text-xs text-text-secondary uppercase font-semibold tracking-wide hidden sm:block">Qty</span>
                         <div className="flex items-center bg-border-dark rounded-full p-1 shadow-inner">
@@ -223,7 +224,7 @@ export default function LibraryItemRow({
                             <span className="text-text-secondary text-sm ml-1 font-medium">min</span>
                         </div>
                     </>
-                )}
+                ))}
             </div>
         </div>
     );

@@ -69,4 +69,18 @@ describe('LibraryItemRow', () => {
 
         expect(defaultProps.onAdjust).toHaveBeenCalledWith(1, 'count', 2);
     });
+
+    it('hides quantity controls when selectable is false', () => {
+        render(<LibraryItemRow {...defaultProps} selectable={false} />);
+
+        // Should not see the add/remove buttons or quantity inputs
+        const addBtns = screen.queryAllByText('add');
+        expect(addBtns).toHaveLength(0);
+
+        const removeBtns = screen.queryAllByText('remove');
+        expect(removeBtns).toHaveLength(0);
+
+        const label = screen.queryByText(/Qty|Time/);
+        expect(label).not.toBeInTheDocument();
+    });
 });

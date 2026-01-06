@@ -226,9 +226,24 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                             )}
                         </div>
 
-                        {/* Mobile Actions */}
-                        <div className="flex items-center gap-0">
-                            {!isEditing && (
+
+                    </div>
+
+                    <div className="flex items-center justify-between px-2 gap-2">
+                        {/* Quantity Selector (Left) */}
+                        <div className="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-full px-2 py-1 border border-gray-100 dark:border-border-dark shrink-0">
+                            <button onClick={() => handleCountChange(-1)} disabled={count <= 1} className="text-slate-400 active:text-primary disabled:opacity-30">
+                                <span className="material-symbols-outlined text-[16px]">remove</span>
+                            </button>
+                            <span className="text-xs font-bold text-slate-700 dark:text-gray-300 w-3 text-center">{count}</span>
+                            <button onClick={() => handleCountChange(1)} className="text-slate-400 active:text-primary">
+                                <span className="material-symbols-outlined text-[16px]">add</span>
+                            </button>
+                        </div>
+
+                        {/* Middle Actions (Non-Editing: Library, Edit, Delete | Editing: Delete) */}
+                        <div className="flex items-center gap-1 shrink-0">
+                            {!isEditing ? (
                                 <>
                                     <button
                                         onClick={() => onSaveToLibrary(item)}
@@ -240,28 +255,22 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                                     <button onClick={handleEditStart} className="p-2 text-slate-400 active:text-blue-500" title="Edit">
                                         <span className="material-symbols-outlined text-[20px]">edit</span>
                                     </button>
+                                    <button onClick={() => onDelete(item.id)} className="p-2 text-slate-400 active:text-red-500" title="Delete">
+                                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                                    </button>
                                 </>
+                            ) : (
+                                <button onClick={() => onDelete(item.id)} className="p-2 text-slate-400 active:text-red-500" title="Delete">
+                                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                                </button>
                             )}
-                            <button onClick={() => onDelete(item.id)} className="p-2 text-slate-400 active:text-red-500" title="Delete">
-                                <span className="material-symbols-outlined text-[20px]">delete</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pl-12 pr-2">
-                        {/* Count */}
-                        <div className="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-full px-2 py-1 border border-gray-100 dark:border-border-dark">
-                            <button onClick={() => handleCountChange(-1)} disabled={count <= 1} className="text-slate-400 active:text-primary disabled:opacity-30">
-                                <span className="material-symbols-outlined text-[16px]">remove</span>
-                            </button>
-                            <span className="text-xs font-bold text-slate-700 dark:text-gray-300 w-3 text-center">{count}</span>
-                            <button onClick={() => handleCountChange(1)} className="text-slate-400 active:text-primary">
-                                <span className="material-symbols-outlined text-[16px]">add</span>
-                            </button>
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex items-center justify-end">
+                        {/* Spacer */}
+                        <div className="flex-1"></div>
+
+                        {/* Stats / Inputs (Right) */}
+                        <div className="flex items-center justify-end shrink-0">
                             {isEditing ? (
                                 <ItemMeasurementInputs
                                     type={draft.type}

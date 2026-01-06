@@ -2,7 +2,7 @@ import React from 'react';
 import ActivityItem from './ActivityItem';
 import QuickAdd from './QuickAdd';
 
-export default function ActivityLog({ items, libraryItemNames, onAdd, onDelete, onUpdate, onOpenLibrary, onSaveToLibrary }) {
+export default function ActivityLog({ items, libraryItemNames, onAdd, onDelete, onUpdate, onOpenLibrary, onOpenHistory, onSaveToLibrary }) {
 
 
     const handleQuickAdd = async (newItem) => {
@@ -35,10 +35,17 @@ export default function ActivityLog({ items, libraryItemNames, onAdd, onDelete, 
                 ))}
                 <QuickAdd onAdd={handleQuickAdd} />
             </div>
-            <div className="p-2 border-t border-gray-100 dark:border-border-dark bg-gray-50 dark:bg-card-dark">
+            <div className="p-2 border-t border-gray-100 dark:border-border-dark bg-gray-50 dark:bg-card-dark flex gap-2">
+                <button
+                    onClick={onOpenHistory}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-700 dark:text-gray-300 bg-white dark:bg-input-bg-dark border border-gray-200 dark:border-border-dark rounded-md shadow-sm hover:border-primary hover:text-primary transition-all"
+                >
+                    <span className="material-symbols-outlined text-[16px]">history</span>
+                    Add from History
+                </button>
                 <button
                     onClick={onOpenLibrary}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-700 dark:text-gray-300 bg-white dark:bg-input-bg-dark border border-gray-200 dark:border-border-dark rounded-md shadow-sm hover:border-primary hover:text-primary transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-700 dark:text-gray-300 bg-white dark:bg-input-bg-dark border border-gray-200 dark:border-border-dark rounded-md shadow-sm hover:border-primary hover:text-primary transition-all"
                 >
                     <span className="material-symbols-outlined text-[16px]">library_add</span>
                     Add from Library

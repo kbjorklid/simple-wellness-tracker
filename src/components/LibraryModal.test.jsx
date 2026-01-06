@@ -176,4 +176,72 @@ describe('LibraryModal', () => {
         // Check footer (Add Selected) is hidden
         expect(screen.queryByText('Add Selected')).toBeNull();
     });
+    it('fetches and displays history items correctly', async () => {
+        const historyItems = [
+            { id: 101, name: 'History Food A', type: 'FOOD', calories: 200, date: '2023-01-01T10:00:00' },
+            { id: 102, name: 'History Food B', type: 'FOOD', calories: 300, date: '2023-01-01T09:00:00' },
+            { id: 103, name: 'History Food A', type: 'FOOD', calories: 200, date: '2022-12-31T10:00:00' } // Duplicate name
+        ];
+
+        // Setup chain mock for history query
+        const mockToArray = vi.fn().mockResolvedValue(historyItems);
+        const mockLimit = vi.fn().mockReturnValue({ toArray: mockToArray });
+        const mockReverse = vi.fn().mockReturnValue({ limit: mockLimit });
+        const mockBelow = vi.fn().mockReturnValue({ reverse: mockReverse });
+        const mockWhere = vi.fn().mockReturnValue({ below: mockBelow });
+
+        db.items = {
+            where: mockWhere
+        };
+
+        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} mode="history" currentDate="2023-01-02" />);
+
+        expect(screen.getByText('Add from History')).toBeDefined();
+
+        await waitFor(() => {
+            expect(screen.getByText('History Food A')).toBeDefined();
+            expect(screen.getByText('History Food B')).toBeDefined();
+        });
+
+        // Check deduplication - getAllByText should return 1 element if deduplicated, or maybe 2 if we are not careful?
+        // Wait, 'History Food A' appears twice in source, but should appear once in UI.
+        const items = screen.getAllByText('History Food A');
+        expect(items.length).toBe(1);
+    });
+
+    it('does not multiply calories for food items with count > 1', async () => {
+        render(<LibraryModal isOpen={true} onClose={mockOnClose} onAdd={mockOnAdd} />);
+        await waitFor(() => expect(screen.getByText('Banana')).toBeDefined());
+
+        // Select Banana (105 kcal)
+        const bananaRow = screen.getByText('Banana').closest('.group');
+        const checkbox = bananaRow.querySelector('input[type="checkbox"]');
+        fireEvent.click(checkbox);
+
+        // Increase count to 2
+        const countInput = bananaRow.querySelector('input[type="number"]');
+        expect(countInput.value).toBe('1');
+
+        const increaseButton = countInput.nextElementSibling;
+        fireEvent.click(increaseButton);
+
+        expect(countInput.value).toBe('2');
+
+        // Click Add Selected
+        const addSelectedButton = screen.getByText(/Add Selected/);
+        fireEvent.click(addSelectedButton);
+
+        await waitFor(() => {
+            expect(mockOnAdd).toHaveBeenCalled();
+        });
+
+        const calledArgs = mockOnAdd.mock.calls[0][0];
+        expect(calledArgs).toHaveLength(1);
+        expect(calledArgs[0]).toEqual(expect.objectContaining({
+            name: 'Banana',
+            type: 'FOOD',
+            count: 2,
+            calories: 105 // Should remain unit calories!
+        }));
+    });
 });

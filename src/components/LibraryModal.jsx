@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import LibraryItemRow from './LibraryItemRow';
 
-export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select' }) {
+export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select', currentDate }) {
     const [isCreating, setIsCreating] = useState(false);
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState('ALL'); // ALL, FOOD, EXERCISE
@@ -19,23 +19,63 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select' }
         }
     }, [isOpen]);
 
+    // Fetch items based on mode
     const items = useLiveQuery(
         () => {
-            let collection = db.library.toCollection();
+            if (mode === 'history') {
+                // Return promise for history items
+                // We want items from BEFORE the current date (or just all valid past items?)
+                // User said: "look back at the last 100 history items... Go backward in history starting from yesterday"
+                // So date < currentDate.
+                // Since 'date' is string YYYY-MM-DD, string comparison works.
 
-            // Apply sorting/filtering if needed, but for search/type we might need to filter in memory 
-            // or use compound index. Given library size is likely small (<1000), in-memory filter is fine.
-            return collection.toArray().then(items => {
-                return items.sort((a, b) => {
-                    // Sort by lastUsed (descending), then by name (ascending)
-                    const dateA = a.lastUsed || 0;
-                    const dateB = b.lastUsed || 0;
-                    if (dateB !== dateA) return dateB - dateA;
-                    return a.name.localeCompare(b.name);
+                // We need to fetch enough items to get 100 unique ones. 
+                // Let's fetch last 500 items from history to be safe.
+                return db.items
+                    .where('date').below(currentDate)
+                    .reverse()
+                    .limit(500)
+                    .toArray()
+                    .then(historyItems => {
+                        const uniqueMap = new Map();
+                        const result = [];
+
+                        for (const item of historyItems) {
+                            if (result.length >= 100) break;
+
+                            const normName = item.name.trim().toLowerCase();
+                            if (!uniqueMap.has(normName)) {
+                                uniqueMap.set(normName, true);
+                                // Adapt history item to library item structure if needed
+                                // History items have: id, name, type, calories, minutes, description, date
+                                // Library items have: id, name, type, calories, minutes, description, norm_name, lastUsed
+                                // We can just use the history item as is, but maybe ensure 'minutes' exists
+                                result.push({
+                                    ...item,
+                                    // Use 'id' from history item? No, if we select it, we want to create a NEW item.
+                                    // But LibraryItemRow uses key={item.id}. 
+                                    // We can keep the history item ID as the key for selection tracking.
+                                    norm_name: normName,
+                                    // lastUsed: item.date // We could use this for sorting but they are already sorted by date desc
+                                });
+                            }
+                        }
+                        return result;
+                    });
+            } else {
+                // Normal Library Mode
+                let collection = db.library.toCollection();
+                return collection.toArray().then(items => {
+                    return items.sort((a, b) => {
+                        const dateA = a.lastUsed || 0;
+                        const dateB = b.lastUsed || 0;
+                        if (dateB !== dateA) return dateB - dateA;
+                        return a.name.localeCompare(b.name);
+                    });
                 });
-            });
+            }
         },
-        []
+        [mode, currentDate] // Dependencies
     ) || [];
 
     const filteredItems = items.filter(item => {
@@ -141,7 +181,8 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select' }
                 }
             } else {
                 // FOOD
-                finalCalories = Math.round(item.calories * (adj.count || 1));
+                // Do NOT multiply by count here. ActivityItem multiplies unit calories by count.
+                finalCalories = item.calories;
             }
 
             return {
@@ -178,7 +219,7 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select' }
                 <div className="flex flex-col gap-4 border-b border-border-dark px-6 py-5 bg-[#232010] z-10 shrink-0">
                     <div className="flex items-center justify-between">
                         <h2 className="text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">
-                            {mode === 'manage' ? 'Manage Library' : 'Add from Library'}
+                            {mode === 'manage' ? 'Manage Library' : mode === 'history' ? 'Add from History' : 'Add from Library'}
                         </h2>
                         <div className="flex items-center gap-2">
                             {mode === 'manage' && (
@@ -242,7 +283,7 @@ export default function LibraryModal({ isOpen, onClose, onAdd, mode = 'select' }
                         )}
                         {filteredItems.length === 0 && !isCreating ? (
                             <div className="text-center text-text-secondary py-8">
-                                No items found in library.
+                                {mode === 'history' ? 'No recent history found.' : 'No items found in library.'}
                             </div>
                         ) : (
                             filteredItems.map(item => {
