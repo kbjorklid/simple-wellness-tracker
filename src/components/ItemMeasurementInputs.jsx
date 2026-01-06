@@ -9,23 +9,60 @@ export default function ItemMeasurementInputs({
     onKeyDown,
     className = ''
 }) {
-    const [isLinked, setIsLinked] = useState(type === 'EXERCISE');
+    // Initialize link state and ratio
+    const ratioRef = React.useRef(null);
+    const [isLinked, setIsLinked] = useState(() => {
+        // Default to linked only if it's EXERCISE and has valid values to form a ratio
+        if (type === 'EXERCISE' && minutes > 0 && calories > 0) {
+            return true;
+        }
+        return false;
+    });
 
-    // If type changes to FOOD, unlink; if EXERCISE, default link (or keep user preference? Let's default link for now to match behavior)
+    // Update ratio when linking
+    useEffect(() => {
+        if (isLinked) {
+            if (minutes > 0 && calories > 0) {
+                // Capture ratio if valid values exist
+                ratioRef.current = calories / minutes;
+            } else {
+                // If linking with zero values, we can't establish a ratio yet. 
+                // We'll wait until values are entered? 
+                // Actually, if they link with 0s, and then type minutes=10, we have no ratio.
+                // Standard behavior: Link implies a ratio exists or will be established.
+                // If 0/0, maybe we don't set ratio yet.
+                // If they type minutes=10, do we update calories? No ratio.
+                // So maybe we can't link 0/0? 
+                // Or we accept it, but don't auto-update until we have a ratio.
+                // BUT: User requirement: "new item... unlinked state... user can enter initial values".
+                // So they enter 10m, 33cal. Then Link. Now we have ratio.
+                ratioRef.current = (minutes > 0 && calories > 0) ? calories / minutes : null;
+            }
+        }
+    }, [isLinked]); // Only re-calc on link toggle, NOT on every prop change (that would be unstable)
+
+    // Re-evaluate link possibility on type change (if switching to FOOD, unlink)
     useEffect(() => {
         if (type === 'FOOD') {
             setIsLinked(false);
-        } else {
+        }
+        // If switching back to EXERCISE, do we re-link? 
+        // Best to match 'isLinked' default logic or stay unlink?
+        // Let's stay unlinked to be safe unless we want to persist user preference.
+        // Current logic was: if switch to EXERCISE, default link. 
+        // Let's keep existing logic but respect value check:
+        else if (type === 'EXERCISE' && minutes > 0 && calories > 0) {
             setIsLinked(true);
+            ratioRef.current = calories / minutes;
         }
     }, [type]);
+
 
     const handleMinutesChange = (newMinutes) => {
         let updates = { minutes: newMinutes };
 
-        if (isLinked && minutes > 0 && calories > 0) {
-            const ratio = calories / minutes;
-            updates.calories = Math.round(newMinutes * ratio);
+        if (isLinked && ratioRef.current !== null && newMinutes > 0) {
+            updates.calories = Math.round(newMinutes * ratioRef.current);
         }
         onChange(updates);
     };
@@ -33,9 +70,8 @@ export default function ItemMeasurementInputs({
     const handleCaloriesChange = (newCalories) => {
         let updates = { calories: newCalories };
 
-        if (isLinked && minutes > 0 && calories > 0) {
-            const ratio = minutes / calories;
-            updates.minutes = Math.round(newCalories * ratio);
+        if (isLinked && ratioRef.current !== null && newCalories > 0) {
+            updates.minutes = Math.round(newCalories / ratioRef.current);
         }
         onChange(updates);
     };

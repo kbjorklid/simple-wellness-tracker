@@ -7,6 +7,7 @@ export default function QuickAdd({ onAdd }) {
     const [calories, setCalories] = useState('');
     const [type, setType] = useState('FOOD'); // FOOD or EXERCISE
     const [isLinked, setIsLinked] = useState(false);
+    const ratioRef = React.useRef(null);
 
     const isValid = name.trim().length > 0 && calories !== '';
 
@@ -40,6 +41,7 @@ export default function QuickAdd({ onAdd }) {
         setCalories('');
         setMinutes('');
         setIsLinked(false);
+        ratioRef.current = null;
         setType('FOOD');
     };
 
@@ -49,6 +51,21 @@ export default function QuickAdd({ onAdd }) {
             if (!minutes) setMinutes('30');
         } else {
             setType('FOOD');
+        }
+    };
+
+    const toggleLink = () => {
+        const shouldLink = !isLinked;
+        setIsLinked(shouldLink);
+
+        if (shouldLink) {
+            const m = parseInt(minutes) || 0;
+            const c = parseInt(calories) || 0;
+            if (m > 0 && c > 0) {
+                ratioRef.current = c / m;
+            } else {
+                ratioRef.current = null;
+            }
         }
     };
 
@@ -112,13 +129,8 @@ export default function QuickAdd({ onAdd }) {
 
                                     if (isLinked) {
                                         const minVal = parseInt(newMinutes) || 0;
-                                        // Use current state for ratio calculation
-                                        const currentMin = parseInt(minutes) || 0;
-                                        const currentCal = parseInt(calories) || 0;
-
-                                        if (currentMin > 0 && currentCal > 0 && minVal > 0) {
-                                            const ratio = currentCal / currentMin;
-                                            setCalories(Math.round(minVal * ratio).toString());
+                                        if (minVal > 0 && ratioRef.current !== null) {
+                                            setCalories(Math.round(minVal * ratioRef.current).toString());
                                         }
                                     }
                                 }}
@@ -129,7 +141,7 @@ export default function QuickAdd({ onAdd }) {
                                 aria-label="Minutes"
                             />
                             <button
-                                onClick={() => setIsLinked(!isLinked)}
+                                onClick={toggleLink}
                                 className={`size-6 flex items-center justify-center rounded transition-colors shrink-0 ${isLinked ? 'text-primary bg-primary/10' : 'text-slate-300 hover:text-slate-400'}`}
                                 title={isLinked ? "Unlink (edit separately)" : "Link (edit proportionally)"}
                             >
@@ -144,12 +156,8 @@ export default function QuickAdd({ onAdd }) {
 
                                     if (type === 'EXERCISE' && isLinked) {
                                         const calVal = parseInt(newCalories) || 0;
-                                        const currentMin = parseInt(minutes) || 0;
-                                        const currentCal = parseInt(calories) || 0;
-
-                                        if (currentMin > 0 && currentCal > 0 && calVal > 0) {
-                                            const ratio = currentMin / currentCal;
-                                            setMinutes(Math.round(calVal * ratio).toString());
+                                        if (calVal > 0 && ratioRef.current !== null) {
+                                            setMinutes(Math.round(calVal / ratioRef.current).toString());
                                         }
                                     }
                                 }}

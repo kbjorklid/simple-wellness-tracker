@@ -148,4 +148,29 @@ describe('QuickAdd', () => {
         // Cancel button should disappear when empty
         expect(screen.queryByTitle('Cancel')).not.toBeInTheDocument();
     });
+    it('maintains stable ratio to prevent rounding errors', () => {
+        render(<QuickAdd onAdd={vi.fn()} />);
+        fireEvent.click(screen.getByTitle('Current type: FOOD. Click to toggle.')); // Switch to EXERCISE
+
+        const minInput = screen.getByLabelText('Minutes');
+        const calInput = screen.getByLabelText('Calories');
+
+        // Initial: 10 mins, 34 cals (Ratio 3.4)
+        fireEvent.change(minInput, { target: { value: '10' } });
+        fireEvent.change(calInput, { target: { value: '34' } });
+
+        // Link
+        fireEvent.click(screen.getByTitle('Link (edit proportionally)'));
+
+        // Change to 11 mins -> 37.4 -> 37 cals
+        fireEvent.change(minInput, { target: { value: '11' } });
+        expect(calInput).toHaveValue(37);
+
+        // Jump to 20 mins
+        // If unstable (derived from 37/11=3.36): 20 * 3.36 = 67.2 -> 67
+        // If stable (3.4): 20 * 3.4 = 68
+        fireEvent.change(minInput, { target: { value: '20' } });
+        expect(calInput).toHaveValue(68);
+    });
 });
+
