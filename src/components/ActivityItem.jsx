@@ -269,18 +269,9 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                         {/* Spacer */}
                         <div className="flex-1"></div>
 
-                        {/* Stats / Inputs (Right) */}
-                        <div className="flex items-center justify-end shrink-0">
-                            {isEditing ? (
-                                <ItemMeasurementInputs
-                                    type={draft.type}
-                                    minutes={draft.minutes}
-                                    calories={draft.calories}
-                                    onChange={(updates) => setDraft(prev => ({ ...prev, ...updates }))}
-                                    onKeyDown={handleKeyDown}
-                                    className="justify-end"
-                                />
-                            ) : (
+                        {/* Stats (Right) - Only show when NOT editing on mobile, because editing moves inputs to next row */}
+                        {!isEditing && (
+                            <div className="flex items-center justify-end shrink-0">
                                 <div className="flex flex-col items-end leading-none">
                                     <span className={`text-lg font-bold ${draft.type === 'EXERCISE' ? 'text-orange-500' : 'text-slate-900 dark:text-white'}`}>
                                         {totalCalories}
@@ -292,9 +283,23 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                                         </span>
                                     )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
+
+                    {/* Mobile Editing Inputs (New Row) */}
+                    {isEditing && (
+                        <div className="flex items-center justify-end w-full px-2">
+                            <ItemMeasurementInputs
+                                type={draft.type}
+                                minutes={draft.minutes}
+                                calories={draft.calories}
+                                onChange={(updates) => setDraft(prev => ({ ...prev, ...updates }))}
+                                onKeyDown={handleKeyDown}
+                                className="justify-end w-full"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
