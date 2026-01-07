@@ -83,4 +83,45 @@ describe('ItemMeasurementInputs', () => {
         // Should use cached 3.4 ratio: 20 * 3.4 = 68
         expect(handleChange).toHaveBeenCalledWith({ minutes: 20, calories: 68 });
     });
+    it('updates negative calories proportionally for EXERCISE', () => {
+        const handleChange = vi.fn();
+        // Initial state: 10 mins, -100 cal (Ratio -10)
+        render(<ItemMeasurementInputs type="EXERCISE" calories={-100} minutes={10} onChange={handleChange} />);
+
+        // Verify Default Linked
+        expect(screen.getByTitle('Unlink (edit separately)')).toBeInTheDocument();
+
+        // Change minutes to 20 -> should be -200 cal
+        const minutesInput = screen.getByLabelText('Minutes');
+        fireEvent.change(minutesInput, { target: { value: '20' } });
+
+        expect(handleChange).toHaveBeenCalledWith({ minutes: 20, calories: -200 });
+    });
+
+    it('updates minutes proportionally when negative calories change', () => {
+        const handleChange = vi.fn();
+        // Initial: 10 mins, -100 cal (Ratio -10)
+        render(<ItemMeasurementInputs type="EXERCISE" calories={-100} minutes={10} onChange={handleChange} />);
+
+        // Change calories to -200 -> should be 20 mins
+        const caloriesInput = screen.getByLabelText('Calories');
+        fireEvent.change(caloriesInput, { target: { value: '-200' } });
+
+        // -200 / -10 = 20
+        expect(handleChange).toHaveBeenCalledWith({ calories: -200, minutes: 20 });
+    });
+
+    it('keeps minutes positive when updating calories with positive value', () => {
+        // If user accidentally enters positive calories for exercise (e.g. 200)
+        const handleChange = vi.fn();
+        // Initial: 10 mins, -100 cal (Ratio -10)
+        render(<ItemMeasurementInputs type="EXERCISE" calories={-100} minutes={10} onChange={handleChange} />);
+
+        const caloriesInput = screen.getByLabelText('Calories');
+        fireEvent.change(caloriesInput, { target: { value: '200' } });
+
+        // 200 / -10 = -20. But minutes must be positive.
+        // We implemented Math.abs() wrapper.
+        expect(handleChange).toHaveBeenCalledWith({ calories: 200, minutes: 20 });
+    });
 });

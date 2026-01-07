@@ -11,9 +11,12 @@ export default function ItemMeasurementInputs({
 }) {
     // Initialize link state and ratio
     const ratioRef = React.useRef(null);
+
     const [isLinked, setIsLinked] = useState(() => {
         // Default to linked only if it's EXERCISE and has valid values to form a ratio
-        if (type === 'EXERCISE' && minutes > 0 && calories > 0) {
+        // Use Math.abs for calories check as they are negative for EXERCISE
+        const shouldLink = type === 'EXERCISE' && minutes > 0 && Math.abs(calories) > 0;
+        if (shouldLink) {
             return true;
         }
         return false;
@@ -22,21 +25,11 @@ export default function ItemMeasurementInputs({
     // Update ratio when linking
     useEffect(() => {
         if (isLinked) {
-            if (minutes > 0 && calories > 0) {
+            if (minutes > 0 && Math.abs(calories) > 0) {
                 // Capture ratio if valid values exist
                 ratioRef.current = calories / minutes;
             } else {
-                // If linking with zero values, we can't establish a ratio yet. 
-                // We'll wait until values are entered? 
-                // Actually, if they link with 0s, and then type minutes=10, we have no ratio.
-                // Standard behavior: Link implies a ratio exists or will be established.
-                // If 0/0, maybe we don't set ratio yet.
-                // If they type minutes=10, do we update calories? No ratio.
-                // So maybe we can't link 0/0? 
-                // Or we accept it, but don't auto-update until we have a ratio.
-                // BUT: User requirement: "new item... unlinked state... user can enter initial values".
-                // So they enter 10m, 33cal. Then Link. Now we have ratio.
-                ratioRef.current = (minutes > 0 && calories > 0) ? calories / minutes : null;
+                ratioRef.current = (minutes > 0 && Math.abs(calories) > 0) ? calories / minutes : null;
             }
         }
     }, [isLinked]); // Only re-calc on link toggle, NOT on every prop change (that would be unstable)
@@ -46,12 +39,10 @@ export default function ItemMeasurementInputs({
         if (type === 'FOOD') {
             setIsLinked(false);
         }
-        // If switching back to EXERCISE, do we re-link? 
-        // Best to match 'isLinked' default logic or stay unlink?
-        // Let's stay unlinked to be safe unless we want to persist user preference.
-        // Current logic was: if switch to EXERCISE, default link. 
-        // Let's keep existing logic but respect value check:
-        else if (type === 'EXERCISE' && minutes > 0 && calories > 0) {
+        else if (type === 'EXERCISE' && minutes > 0 && Math.abs(calories) > 0 && !isLinked) {
+            // Only auto-link if switching type. If existing, respect current state?
+            // Actually my logic before was "re-evaluate".
+            // If I am editing an item that WAS Food, and I switch to Exercise, it should probably link?
             setIsLinked(true);
             ratioRef.current = calories / minutes;
         }
@@ -70,8 +61,9 @@ export default function ItemMeasurementInputs({
     const handleCaloriesChange = (newCalories) => {
         let updates = { calories: newCalories };
 
-        if (isLinked && ratioRef.current !== null && newCalories > 0) {
-            updates.minutes = Math.round(newCalories / ratioRef.current);
+        if (isLinked && ratioRef.current !== null && Math.abs(newCalories) > 0) {
+            // Ensure minutes are positive
+            updates.minutes = Math.abs(Math.round(newCalories / ratioRef.current));
         }
         onChange(updates);
     };
