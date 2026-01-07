@@ -76,7 +76,7 @@ export default function QuickAdd({ onAdd }) {
 
     return (
 
-        <div className="flex flex-col md:grid md:grid-cols-[20px_60px_48px_1fr_160px_60px] gap-3 px-3 py-3 md:py-1.5 items-center bg-gray-50/50 dark:bg-input-bg-dark/30 border-t border-dashed border-gray-200 dark:border-border-dark opacity-100 transition-opacity">
+        <div className="flex flex-col md:grid md:grid-cols-[20px_60px_48px_1fr_240px_60px] gap-3 px-3 py-3 md:py-1.5 items-center bg-gray-50/50 dark:bg-input-bg-dark/30 border-t border-dashed border-gray-200 dark:border-border-dark opacity-100 transition-opacity">
             {/* Desktop Spacers */}
             <div className="hidden md:block"></div>
             <div className="hidden md:block"></div>
@@ -135,7 +135,7 @@ export default function QuickAdd({ onAdd }) {
                                     }
                                 }}
                                 onKeyDown={handleKeyDown}
-                                className="w-full md:w-[80px]"
+                                className="w-[85px] shrink-0"
                                 placeholder="0"
                                 suffix="min"
                                 aria-label="Minutes"
@@ -162,7 +162,7 @@ export default function QuickAdd({ onAdd }) {
                                     }
                                 }}
                                 onKeyDown={handleKeyDown}
-                                className="w-full md:w-[90px]"
+                                className="w-[105px] shrink-0"
                                 placeholder="0"
                                 suffix="cal"
                                 aria-label="Calories"

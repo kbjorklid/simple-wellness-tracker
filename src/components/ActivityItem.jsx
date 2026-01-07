@@ -87,7 +87,7 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
         <div className={`group ${typeBg} transition-colors border-b border-gray-100 dark:border-border-dark last:border-0`}>
 
 
-            <div className="flex flex-col md:grid md:grid-cols-[20px_60px_48px_1fr_160px_60px] gap-2 md:gap-3 px-3 py-3 md:py-1.5 items-start md:items-center">
+            <div className="flex flex-col md:grid md:grid-cols-[20px_60px_48px_1fr_240px_60px] gap-2 md:gap-3 px-3 py-3 md:py-1.5 items-start md:items-center">
 
                 {/* 1. Expand Toggle (Desktop: Col 1) */}
                 <div className="hidden md:flex items-center justify-center">
