@@ -162,7 +162,7 @@ export default function QuickAdd({ onAdd }) {
                                     }
                                 }}
                                 onKeyDown={handleKeyDown}
-                                className="w-[105px] shrink-0"
+                                className="w-[85px] shrink-0"
                                 placeholder="0"
                                 suffix="cal"
                                 aria-label="Calories"

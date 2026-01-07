@@ -108,7 +108,7 @@ export default function ItemMeasurementInputs({
                 value={calories || ''}
                 onChange={(e) => handleCaloriesChange(parseInt(e.target.value) || 0)}
                 onKeyDown={onKeyDown}
-                className="w-[105px] shrink-0"
+                className="w-[85px] shrink-0"
                 placeholder="0"
                 suffix="cal"
                 aria-label="Calories"
