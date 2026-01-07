@@ -89,7 +89,7 @@ export default function ItemMeasurementInputs({
                 value={minutes || ''}
                 onChange={(e) => handleMinutesChange(parseInt(e.target.value) || 0)}
                 onKeyDown={onKeyDown}
-                className="w-[60px]"
+                className="w-[80px]"
                 placeholder="0"
                 suffix="min"
                 aria-label="Minutes"
@@ -108,7 +108,7 @@ export default function ItemMeasurementInputs({
                 value={calories || ''}
                 onChange={(e) => handleCaloriesChange(parseInt(e.target.value) || 0)}
                 onKeyDown={onKeyDown}
-                className="w-[70px]"
+                className="w-[90px]"
                 placeholder="0"
                 suffix="cal"
                 aria-label="Calories"

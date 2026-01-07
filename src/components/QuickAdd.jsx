@@ -135,7 +135,7 @@ export default function QuickAdd({ onAdd }) {
                                     }
                                 }}
                                 onKeyDown={handleKeyDown}
-                                className="w-full md:w-[60px]"
+                                className="w-full md:w-[80px]"
                                 placeholder="0"
                                 suffix="min"
                                 aria-label="Minutes"
@@ -162,7 +162,7 @@ export default function QuickAdd({ onAdd }) {
                                     }
                                 }}
                                 onKeyDown={handleKeyDown}
-                                className="w-full md:w-[70px]"
+                                className="w-full md:w-[90px]"
                                 placeholder="0"
                                 suffix="cal"
                                 aria-label="Calories"
