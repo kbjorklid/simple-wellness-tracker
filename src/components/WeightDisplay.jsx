@@ -14,7 +14,8 @@ export default function WeightDisplay({ weight, onSave, unit = 'kg' }) {
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
             handleSave();
         } else if (e.key === 'Escape') {
             setIsEditing(false);
@@ -29,16 +30,18 @@ export default function WeightDisplay({ weight, onSave, unit = 'kg' }) {
     if (isEditing) {
         return (
             <div className="w-24">
-                <WellnessInput
-                    autoFocus
-                    type="number"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onBlur={handleSave}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Weight"
-                    suffix={unit}
-                />
+                <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+                    <WellnessInput
+                        autoFocus
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleSave}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Weight"
+                        suffix={unit}
+                    />
+                </form>
             </div>
         );
     }

@@ -75,7 +75,7 @@ describe('ProgressBar', () => {
     it('handles negative net calories', () => {
         const items = [
             { type: 'FOOD', calories: 200, count: 1 },
-            { type: 'EXERCISE', calories: -300, count: 1 }, // Net -100
+            { type: 'EXERCISE', calories: -300, minutes: 0, count: 1 }, // Net -100, 0 minutes so no RMR deduction diff
         ];
         const { container } = render(<ProgressBar items={items} goal={2000} rmr={2000} />);
 
@@ -87,5 +87,24 @@ describe('ProgressBar', () => {
         expect(widths[0]).toBe('0%');
         expect(widths[1]).toBe('0%');
         expect(widths[2]).toBe('0%');
+    });
+
+    it('correctly deducts RMR from exercise burn', () => {
+        // This is the bug reproduction case.
+        // RMR = 1440 (1 kcal/min)
+        // Exercise: 30 mins, -200 cal.
+        // RMR during exercise = 30 * 1 = 30 kcal.
+        // Total Net Burn = -200 (Burn) + 30 (RMR adj) = -170.
+
+        // WITHOUT adjustment: -200 + 0 = -200.
+
+        const items = [
+            { type: 'EXERCISE', calories: -200, minutes: 30, count: 1 }
+        ];
+
+        render(<ProgressBar items={items} goal={2000} rmr={1440} />);
+
+        // Expect to see -170, not -200
+        expect(screen.getByText(/-170/)).toBeInTheDocument();
     });
 });

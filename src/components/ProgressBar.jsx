@@ -5,13 +5,22 @@ export default function ProgressBar({ items = [], goal = 2000, rmr = 2000 }) {
         .filter(item => item.type === 'FOOD')
         .reduce((acc, item) => acc + (item.calories * (item.count || 1)), 0);
 
-    const exerciseBurned = items
-        .filter(item => item.type === 'EXERCISE')
+    const exerciseItems = items.filter(item => item.type === 'EXERCISE');
+
+    const exerciseBurned = exerciseItems
         .reduce((acc, item) => acc + (item.calories * (item.count || 1)), 0);
+
+    const totalExerciseMinutes = exerciseItems
+        .reduce((acc, item) => acc + ((item.minutes || 0) * (item.count || 1)), 0);
+
+    // DEDUCT RMR for the time spent exercising
+    // The user would have burned (Minutes / 1440 * RMR) anyway if they did nothing.
+    // So we add this positive amount to the negative exercise burn to get the NET extra burn.
+    const rmrDeduction = (totalExerciseMinutes / 1440) * rmr;
 
     // netCalories can be negative if lots of exercise, clamp visual to 0 for bar usually, 
     // but logic below handles max(0, ...)
-    const netCalories = foodConsumed + exerciseBurned;
+    const netCalories = foodConsumed + exerciseBurned + Math.round(rmrDeduction);
 
     // Visual Scale Logic
     // The bar represents the range from 0 to Scale.

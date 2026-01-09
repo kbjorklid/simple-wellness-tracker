@@ -96,6 +96,7 @@ export default function ItemMeasurementInputs({
             />
 
             <button
+                type="button"
                 onClick={() => setIsLinked(!isLinked)}
                 className={`size-6 flex items-center justify-center rounded transition-colors shrink-0 ${isLinked ? 'text-primary bg-primary/10' : 'text-slate-300 hover:text-slate-400'}`}
                 title={isLinked ? "Unlink (edit separately)" : "Link (edit proportionally)"}

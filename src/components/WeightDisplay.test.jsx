@@ -71,4 +71,20 @@ describe('WeightDisplay', () => {
         expect(handleSave).not.toHaveBeenCalled();
         expect(screen.getByText('75')).toBeInTheDocument();
     });
+    it('wraps input in a form for Better Enter key support', () => {
+        const handleSave = vi.fn();
+        const { container } = render(<WeightDisplay weight={75} onSave={handleSave} />);
+
+        fireEvent.click(screen.getByTitle('Click to edit weight'));
+
+        const form = container.querySelector('form');
+        expect(form).toBeInTheDocument();
+
+        const input = screen.getByPlaceholderText('Weight');
+        fireEvent.change(input, { target: { value: '85' } });
+
+        fireEvent.submit(form);
+
+        expect(handleSave).toHaveBeenCalledWith(85);
+    });
 });

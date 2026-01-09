@@ -123,9 +123,26 @@ describe('ActivityItem', () => {
         // but verifying the callback and presence is a strong signal.
         await new Promise(r => setTimeout(r, 60)); // Wait for the timeout in component
         expect(mockOnFocusHandled).toHaveBeenCalled();
+    });
 
-        // Verify name input does NOT have autoFocus (by exclusion, or logic check in code structure which creates <WellnessInput autoFocus={false} />)
-        // Explicitly checking the prop on the rendered input might be tricky without internal component mocking, 
-        // but we can trust the render logic if the description is present and focused.
+    it('wraps mobile inputs in a form for Better Enter key support', () => {
+        const { container } = render(<ActivityItem item={mockItem} onDelete={mockOnDelete} onUpdate={mockOnUpdate} />);
+
+        // Enter edit mode
+        const editBtn = screen.getAllByTitle('Edit')[0];
+        fireEvent.click(editBtn);
+
+        // Find forms in the document
+        const forms = container.querySelectorAll('form');
+        expect(forms.length).toBeGreaterThan(0);
+
+        // Simulate submit on the first form (which should be one of the input wrappers)
+        // We need to change a value first to verify save triggers an update with new value
+        const nameInputs = screen.getAllByDisplayValue('Test Food');
+        fireEvent.change(nameInputs[0], { target: { value: 'Form Submit Food' } });
+
+        fireEvent.submit(forms[0]);
+
+        expect(mockOnUpdate).toHaveBeenCalledWith(1, expect.objectContaining({ name: 'Form Submit Food' }));
     });
 });

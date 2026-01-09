@@ -60,7 +60,8 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault(); // Prevent default if it's a form submission to avoid double-firing or page reload
             handleSave();
         } else if (e.key === 'Escape') {
             handleCancel();
@@ -211,13 +212,15 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                         {/* Name Input/Display */}
                         <div className="flex-1 min-w-0">
                             {isEditing ? (
-                                <WellnessInput
-                                    value={draft.name}
-                                    onChange={(e) => handleChange('name', e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Item name"
-                                    className="w-full"
-                                />
+                                <form className="w-full" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+                                    <WellnessInput
+                                        value={draft.name}
+                                        onChange={(e) => handleChange('name', e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder="Item name"
+                                        className="w-full"
+                                    />
+                                </form>
                             ) : (
                                 <div className="text-slate-900 dark:text-white font-medium text-base truncate pr-2" onClick={() => (hasDescription || isEditing) && setIsExpanded(!isExpanded)}>
                                     {item.name}
@@ -290,14 +293,16 @@ export default function ActivityItem({ item, isInLibrary, onDelete, onUpdate, on
                     {/* Mobile Editing Inputs (New Row) */}
                     {isEditing && (
                         <div className="flex items-center justify-end w-full px-2">
-                            <ItemMeasurementInputs
-                                type={draft.type}
-                                minutes={draft.minutes}
-                                calories={draft.calories}
-                                onChange={(updates) => setDraft(prev => ({ ...prev, ...updates }))}
-                                onKeyDown={handleKeyDown}
-                                className="justify-end w-full"
-                            />
+                            <form className="w-full flex justify-end" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+                                <ItemMeasurementInputs
+                                    type={draft.type}
+                                    minutes={draft.minutes}
+                                    calories={draft.calories}
+                                    onChange={(updates) => setDraft(prev => ({ ...prev, ...updates }))}
+                                    onKeyDown={handleKeyDown}
+                                    className="justify-end w-full"
+                                />
+                            </form>
                         </div>
                     )}
                 </div>
